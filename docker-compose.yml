@@ -1,0 +1,58 @@
+# TechStore local environment.
+#
+#   docker compose up -d --wait                       -> SQL Server only (daily development)
+#   docker compose --profile app up -d --build --wait -> SQL Server + API + web, all in Docker
+#
+# Values like ${DB_PASSWORD} are read from the .env file next to this one.
+
+# Fixed project name, so container/volume names don't depend on the folder you cloned into
+name: tech-store
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:?Missing .env - copy .env.example to .env first}
+      DB_NAME: ${DB_NAME:-TechStoreDb}
+    ports: ['1433:1433']
+    volumes: ['sqlserver-data:/var/opt/mssql']
+    healthcheck:
+      # Creates the app database on first run, then reports healthy once SQL Server accepts queries.
+      # $$ is an escaped $: the variable is expanded inside the container, not by docker-compose.
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -Q "IF DB_ID('$$DB_NAME') IS NULL CREATE DATABASE [$$DB_NAME]; SELECT 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # --- Optional: run the whole stack in Docker (profile "app") ---
+
+  server:
+    profiles: ['app']
+    build: ./server
+    env_file: .env
+    environment:
+      DB_HOST: sqlserver # inside Docker, containers reach each other by service name
+      NODE_ENV: production
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: wget -qO- http://localhost:3000/api/v1/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    profiles: ['app']
+    build: ./web
+    ports: ['8080:80'] # open http://localhost:8080
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  sqlserver-data:

@@ -1,0 +1,25 @@
+{
+  "name": "tech-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TechStore: phone and laptop e-commerce (NestJS + SQL Server + React)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "npm install && npm --prefix server ci && npm --prefix web ci",
+    "dev": "concurrently -n api,web -c blue,green \"npm --prefix server run start:dev\" \"npm --prefix web run dev\"",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f sqlserver",
+    "app:up": "docker compose --profile app up -d --build --wait",
+    "app:down": "docker compose --profile app down",
+    "test": "npm --prefix server test",
+    "test:e2e": "npm --prefix server run test:e2e",
+    "lint": "npm --prefix server run lint && npm --prefix web run lint",
+    "build": "npm --prefix server run build && npm --prefix web run build"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

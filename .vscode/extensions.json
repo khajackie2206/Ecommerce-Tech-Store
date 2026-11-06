@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ms-mssql.mssql",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "oxc.oxc-vscode",
+    "ms-azuretools.vscode-docker"
+  ]
+}

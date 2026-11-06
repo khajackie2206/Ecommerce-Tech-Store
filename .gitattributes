@@ -1,0 +1,8 @@
+# Store every text file with LF line endings, whatever OS the teammate uses.
+# Avoids noisy diffs between Windows and macOS/Linux and keeps Docker scripts working.
+* text=auto eol=lf
+
+# Binary files: never convert line endings or diff them
+*.pdf binary
+*.png binary
+*.jpg binary
