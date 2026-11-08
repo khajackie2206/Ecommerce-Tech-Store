@@ -545,8 +545,12 @@ Từ Phần 2, mỗi phần được chia thành các **task** trên bảng Kanb
 | 3 | #5 ValidationPipe (làm trước) · #6 DTO categories · #7 DTO brands | [p3-1](tasks/p3-1-validation-pipe.md) · [p3-2](tasks/p3-2-categories-dto.md) · [p3-3](tasks/p3-3-brands-dto.md) |
 | 4 | #8 ERD · #9 Truy vấn báo cáo · #10 Truy vấn tồn kho | [p4-1](tasks/p4-1-erd.md) · [p4-2](tasks/p4-2-report-queries.md) · [p4-3](tasks/p4-3-inventory-queries.md) |
 | 5 | #11 Entity Category · #12 Entity Brand | [p5-1](tasks/p5-1-category-entity.md) · [p5-2](tasks/p5-2-brand-entity.md) |
-| 6–14 | #13 – #44 | Hướng dẫn chi tiết được bổ sung khi team học tới |
+| 6 | #13 Entity Product · #14 API danh sách sản phẩm · #15 API chi tiết sản phẩm · #16 Filter lỗi SQL (song song với #13) | [p6-1](tasks/p6-1-product-entities.md) · [p6-2](tasks/p6-2-product-list-api.md) · [p6-3](tasks/p6-3-product-detail-api.md) · [p6-4](tasks/p6-4-sql-exception-filter.md) |
+| 7 | #17 Entity User · #18 Đăng ký, đăng nhập JWT · #19 AuthGuard, @Public · #20 Phân quyền admin (làm theo thứ tự) | [p7-1](tasks/p7-1-user-entity.md) · [p7-2](tasks/p7-2-register-login.md) · [p7-3](tasks/p7-3-auth-guard.md) · [p7-4](tasks/p7-4-roles-guard.md) |
+| 8–14 | #21 – #44 | Hướng dẫn chi tiết được bổ sung khi team học tới |
 
 Luồng làm một task: nhận task (Assignees) → kéo sang **In progress** → tạo nhánh → làm theo hướng dẫn → Pull Request có `Closes #<số>` → teammate review → merge (thẻ tự sang **Done**).
 
-<!-- Phần 6 sẽ được thêm vào đây khi học tới -->
+Lưu ý khi pull code Phần 7 về: thêm `JWT_SECRET` và `JWT_EXPIRES_IN` vào `.env` của mình (xem `.env.example`), thiếu là API không khởi động.
+
+<!-- Phần 8 sẽ được thêm vào đây khi học tới -->

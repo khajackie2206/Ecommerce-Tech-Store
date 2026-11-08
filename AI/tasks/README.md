@@ -23,5 +23,13 @@ Cách học một task:
 | 4 | Truy vấn tồn kho và JSON | [p4-3-inventory-queries.md](p4-3-inventory-queries.md) |
 | 5 | Entity Category, chuyển sang SQL Server | [p5-1-category-entity.md](p5-1-category-entity.md) |
 | 5 | Entity Brand, chuyển sang SQL Server | [p5-2-brand-entity.md](p5-2-brand-entity.md) |
+| 6 | Entity Product, ProductVariant, ProductImage | [p6-1-product-entities.md](p6-1-product-entities.md) |
+| 6 | API danh sách sản phẩm (lọc, sắp xếp, phân trang) | [p6-2-product-list-api.md](p6-2-product-list-api.md) |
+| 6 | API chi tiết sản phẩm | [p6-3-product-detail-api.md](p6-3-product-detail-api.md) |
+| 6 | Filter đổi lỗi SQL Server thành phản hồi dễ hiểu | [p6-4-sql-exception-filter.md](p6-4-sql-exception-filter.md) |
+| 7 | Entity User và UsersService | [p7-1-user-entity.md](p7-1-user-entity.md) |
+| 7 | Đăng ký và đăng nhập bằng JWT | [p7-2-register-login.md](p7-2-register-login.md) |
+| 7 | AuthGuard toàn cục, @Public và @CurrentUser | [p7-3-auth-guard.md](p7-3-auth-guard.md) |
+| 7 | Phân quyền admin: RolesGuard và @Roles | [p7-4-roles-guard.md](p7-4-roles-guard.md) |
 
-Phần 6 trở đi: hướng dẫn chi tiết được bổ sung khi team học tới phần đó, vì code phần sau dựa trên code các bạn viết ở phần trước.
+Phần 8 trở đi: hướng dẫn chi tiết được bổ sung khi team học tới phần đó, vì code phần sau dựa trên code các bạn viết ở phần trước.
