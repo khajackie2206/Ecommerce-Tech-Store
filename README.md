@@ -8,6 +8,7 @@ Website thương mại điện tử bán điện thoại, laptop, tablet và ph�
 | Database | Microsoft SQL Server 2022 (Docker) | [`docker-compose.yml`](docker-compose.yml) |
 | Frontend | React 19, Vite, Tailwind CSS | [`web/`](web/) |
 | Bài học | Hướng dẫn từng phần, gõ theo để học | [`AI/tech-store-bai-hoc.md`](AI/tech-store-bai-hoc.md) |
+| Task | Hướng dẫn chi tiết của từng task trên bảng Kanban (GitHub Projects) | [`AI/tasks/`](AI/tasks/README.md) |
 | Giáo trình | NestJS cơ bản cho người mới bắt đầu (dùng SQL Server), Bài 1–10 | [`docs/nestjs-co-ban-sql-server.pdf`](docs/nestjs-co-ban-sql-server.pdf) |
 
 ## 1. Cài đặt công cụ (một lần)
@@ -33,6 +34,7 @@ cd tech-store
 copy .env.example .env      # macOS/Linux: cp .env.example .env
 npm run setup               # cài thư viện cho thư mục gốc, server và web
 npm run db:up               # bật SQL Server (Docker Desktop phải đang chạy), tự tạo database TechStoreDb
+npm run db:reset            # tạo bảng + nạp dữ liệu mẫu (điện thoại, laptop...)
 npm run dev                 # chạy API + web cùng lúc
 ```
 
@@ -66,6 +68,9 @@ Chạy từ thư mục gốc:
 | `npm run setup` | Cài thư viện (chạy lại sau mỗi lần `git pull` có thay đổi `package.json`) |
 | `npm run dev` | Chạy API (cổng 3000) và web (cổng 5173), tự reload khi sửa code |
 | `npm run db:up` / `db:down` / `db:logs` | Bật / tắt / xem log SQL Server |
+| `npm run db:schema` | Xoá và tạo lại toàn bộ bảng theo [`database/schema.sql`](database/schema.sql). **Mất hết dữ liệu** |
+| `npm run db:seed` | Xoá dữ liệu sản phẩm/đơn hàng rồi nạp lại dữ liệu mẫu từ [`database/seed.sql`](database/seed.sql) |
+| `npm run db:reset` | Chạy `db:schema` rồi `db:seed`: database sạch, có sẵn dữ liệu mẫu |
 | `npm run app:up` / `app:down` | Chạy / tắt toàn bộ hệ thống bằng Docker |
 | `npm test` | Unit test của API (không cần SQL Server) |
 | `npm run test:e2e` | E2E test của API (cần SQL Server đang chạy) |
@@ -85,18 +90,59 @@ Chỉ có **một** file `.env` ở thư mục gốc, dùng chung cho Docker (SQ
 | `DB_USERNAME` | `sa` | Tài khoản SQL Server |
 | `DB_PASSWORD` | `TechStore@123` | Mật khẩu, cũng là mật khẩu `sa` của container SQL Server. Phải đủ mạnh: ít nhất 8 ký tự, có 3 trong 4 loại chữ hoa, chữ thường, số, ký tự đặc biệt |
 | `DB_NAME` | `TechStoreDb` | Tên database, được tạo tự động |
-| `DB_SYNCHRONIZE` | `true` | TypeORM tự tạo và sửa bảng theo entity. **Chỉ dùng ở máy local** |
+| `DB_SYNCHRONIZE` | `false` | Giữ `false`: bảng do `database/schema.sql` tạo. Đặt `true` thì TypeORM tự sửa bảng theo entity, có thể xoá cột và mất dữ liệu |
 
 `.env` không bao giờ được commit. Thêm biến mới thì cập nhật cả `.env.example`.
 
 Đổi `DB_PASSWORD` **sau khi** container SQL Server đã được tạo sẽ không đổi mật khẩu trong database. Muốn làm lại từ đầu: `docker compose down -v`. Lệnh này **xoá toàn bộ dữ liệu**, rồi chạy `npm run db:up` lại.
 
-## 5. Cấu trúc thư mục
+## 5. Xem dữ liệu trong SQL Server
+
+SQL Server chạy trong Docker nhưng đã mở cổng `1433` ra máy, nên mọi công cụ quản lý database đều kết nối được như với SQL Server cài thẳng trên máy.
+
+| Thông tin kết nối | Giá trị |
+| --- | --- |
+| Server | `localhost` (một số công cụ ghi `localhost,1433`) |
+| Authentication | SQL Login / SQL Server Authentication |
+| User / Password | `sa` / giá trị `DB_PASSWORD` trong `.env` |
+| Database | `TechStoreDb` |
+| Trust server certificate | Bật (chỉ ở máy local) |
+
+Công cụ, chọn một:
+- **VS Code + extension SQL Server (mssql)** của Microsoft (khuyên dùng, có trong danh sách extension gợi ý của repo). Tab **SQL Server** → **Add Connection**. Mở cây **Databases → TechStoreDb → Tables** để xem bảng và cột. Chuột phải vào bảng → **Select Top 1000** để xem dữ liệu.
+- **SQL Server Management Studio (SSMS)**: chỉ có trên Windows, đầy đủ tính năng nhất, vẽ được sơ đồ quan hệ giữa các bảng.
+- **DBeaver Community**: miễn phí, chạy được trên Windows, macOS và Linux.
+- **Không cài gì:** dùng `sqlcmd` có sẵn trong container:
+
+  ```powershell
+  docker compose exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "TechStore@123" -C -d TechStoreDb
+  ```
+
+  Gõ câu lệnh, xuống dòng gõ `GO` để chạy, gõ `exit` để thoát.
+
+Các câu truy vấn xem cấu trúc (danh sách bảng, cột và kiểu dữ liệu, khoá chính/khoá ngoại, số dòng mỗi bảng) có sẵn trong [`docs/sql/inspect-database.sql`](docs/sql/inspect-database.sql).
+
+### Cấu trúc bảng và dữ liệu mẫu
+
+| Bảng | Nội dung | Dữ liệu mẫu |
+| --- | --- | --- |
+| `Categories` | Danh mục | 4: Điện thoại, Laptop, Máy tính bảng, Phụ kiện |
+| `Brands` | Hãng | 10: Apple, Samsung, Xiaomi, OPPO, vivo, ASUS, Dell, HP, Lenovo, Acer |
+| `Products` | Mẫu sản phẩm, thông số kỹ thuật lưu dạng JSON ở cột `specs` | 25 |
+| `ProductVariants` | Phiên bản (màu, dung lượng): giá, giá khuyến mãi, tồn kho | 46 |
+| `ProductImages` | Ảnh của sản phẩm (ảnh giữ chỗ từ placehold.co) | 75 |
+| `Users` | Khách hàng và quản trị | Chưa có, tạo khi đăng ký |
+| `Orders`, `OrderItems` | Đơn hàng và các sản phẩm trong đơn | Chưa có |
+
+Muốn chạy file SQL bằng tay thay vì dùng lệnh npm: mở `database/schema.sql` hoặc `database/seed.sql` trong VS Code (extension SQL Server) hay SSMS, kết nối tới `TechStoreDb` rồi bấm **Execute**.
+
+## 6. Cấu trúc thư mục
 
 ```
 tech-store/
   AI/tech-store-bai-hoc.md   # bài học từng phần
-  docs/                      # tài liệu: giáo trình NestJS + SQL Server (PDF)
+  docs/                      # tài liệu: giáo trình NestJS + SQL Server (PDF), câu SQL tiện dụng
+  database/                  # schema.sql (tạo bảng), seed.sql (dữ liệu mẫu), run-sql.sh
   docker-compose.yml         # SQL Server; profile "app" thêm API + web
   .env.example               # mẫu cấu hình, copy thành .env
   package.json               # lệnh chung: setup, dev, db:up...
@@ -115,14 +161,14 @@ tech-store/
     Dockerfile
 ```
 
-## 6. Quy ước làm việc nhóm
+## 7. Quy ước làm việc nhóm
 
 - **Không code thẳng trên `main`.** Tạo nhánh cho mỗi việc, ví dụ `git switch -c feature/categories`. Push nhánh lên và tạo **Pull Request** để teammate review rồi mới merge.
 - Trước khi bắt đầu: `git switch main`, `git pull`, rồi `npm run setup` nếu có thư viện mới.
 - Comment trong code và commit message viết bằng **tiếng Anh**. Chữ hiển thị trên giao diện viết bằng tiếng Việt.
 - Trước khi tạo Pull Request: `npm run lint` và `npm test` phải qua.
 
-## 7. Lỗi hay gặp
+## 8. Lỗi hay gặp
 
 | Triệu chứng | Cách xử lý |
 | --- | --- |

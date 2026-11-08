@@ -17,7 +17,10 @@ services:
       MSSQL_SA_PASSWORD: ${DB_PASSWORD:?Missing .env - copy .env.example to .env first}
       DB_NAME: ${DB_NAME:-TechStoreDb}
     ports: ['1433:1433']
-    volumes: ['sqlserver-data:/var/opt/mssql']
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+      # SQL scripts (schema, seed) available inside the container, read-only
+      - ./database:/database:ro
     healthcheck:
       # Creates the app database on first run, then reports healthy once SQL Server accepts queries.
       # $$ is an escaped $: the variable is expanded inside the container, not by docker-compose.

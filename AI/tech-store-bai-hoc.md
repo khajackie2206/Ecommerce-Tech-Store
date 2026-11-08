@@ -17,8 +17,8 @@ File này được cập nhật sau mỗi phần học. Làm xong phần nào th
 | [ ] | **1** | Chạy source dựng sẵn, đọc hiểu: NestJS, SQL Server (Docker), React, proxy | Bài 1, 3, một phần Bài 7 |
 | [ ] | 2 | Controller, service, module, dependency injection: module `categories`, `brands` (lưu tạm trong bộ nhớ) | Bài 3, 4 |
 | [ ] | 3 | DTO và kiểm tra dữ liệu đầu vào (`ValidationPipe`, class-validator) | Bài 5 |
-| [ ] | 4 | SQL Server cơ bản: thiết kế database cửa hàng bằng T-SQL, JOIN, GROUP BY | Bài 6 |
-| [ ] | 5 | TypeORM: entity, repository, chuyển `categories`/`brands` sang lưu trong SQL Server | Bài 7 |
+| [ ] | 4 | SQL Server cơ bản: đọc hiểu `database/schema.sql` và `seed.sql`, tự viết SELECT, JOIN, GROUP BY, JSON trên dữ liệu điện thoại/laptop | Bài 6 |
+| [ ] | 5 | TypeORM: viết entity khớp với bảng có sẵn, repository, chuyển `categories`/`brands` sang đọc/ghi SQL Server | Bài 7 |
 | [ ] | 6 | Sản phẩm và phiên bản (màu, dung lượng, giá, tồn kho): quan hệ bảng, lọc, tìm kiếm, sắp xếp, phân trang | Bài 8 |
 | [ ] | 7 | Đăng ký, đăng nhập JWT, guard toàn cục, phân quyền admin/khách hàng | Bài 9 |
 | [ ] | 8 | Swagger và unit test (Vitest) | Bài 10 |
@@ -29,7 +29,7 @@ File này được cập nhật sau mỗi phần học. Làm xong phần nào th
 | [ ] | 13 | Báo cáo doanh thu, sản phẩm bán chạy, dashboard biểu đồ | Nâng cao |
 | [ ] | 14 | Migration thay cho `synchronize`, CI, triển khai | Nâng cao |
 
-Mục lục: [Tổng quan](#tổng-quan) · [Phần 1](#phần-1-chạy-source-dựng-sẵn-và-đọc-hiểu)
+Mục lục: [Tổng quan](#tổng-quan) · [Phần 1](#phần-1-chạy-source-dựng-sẵn-và-đọc-hiểu) · [Phần 2 trở đi](#phần-2-trở-đi-học-theo-task-trên-github)
 
 ---
 
@@ -144,6 +144,7 @@ cd C:\NodeJS\tech-store
 copy .env.example .env      # bỏ qua nếu đã có .env
 npm run setup
 npm run db:up
+npm run db:reset            # tạo bảng + nạp dữ liệu mẫu
 npm run dev
 ```
 
@@ -243,7 +244,7 @@ export class AppModule {}
   - `type: 'mssql'`: dùng driver `mssql` để nói chuyện với SQL Server.
   - `trustServerCertificate: true`: SQL Server ở máy local dùng chứng chỉ tự ký. **Không** dùng tuỳ chọn này với server thật.
   - `autoLoadEntities: true`: tự nạp các entity (class mô tả bảng) mà module khai báo. Từ Phần 5 sẽ dùng.
-  - `synchronize`: TypeORM tự tạo và sửa bảng cho khớp với entity mỗi lần khởi động. Rất tiện khi học, nhưng có thể **xoá cột và mất dữ liệu**. Vì vậy nó được bật bằng biến `DB_SYNCHRONIZE` trong `.env`, chỉ dùng ở máy local. Phần 14 sẽ thay bằng migration.
+  - `synchronize`: TypeORM tự tạo và sửa bảng cho khớp với entity mỗi lần khởi động. Rất tiện khi học, nhưng có thể **xoá cột và mất dữ liệu**. Vì vậy nó được điều khiển bằng biến `DB_SYNCHRONIZE` trong `.env`. Dự án này để **`false`**: bảng được tạo bằng file `database/schema.sql`, còn entity ở Phần 5 sẽ viết cho khớp với bảng có sẵn. Phần 14 sẽ thay file SQL bằng migration.
 
 #### `server/src/app.service.ts`: service
 
@@ -399,7 +400,7 @@ SELECT name, create_date FROM sys.databases;   -- liệt kê database, phải c�
 SELECT @@VERSION;                                -- phiên bản SQL Server
 ```
 
-Database `TechStoreDb` hiện chưa có bảng nào. Phần 4 sẽ tạo bảng bằng T-SQL, Phần 5 để TypeORM tạo bảng từ entity.
+Sau khi chạy `npm run db:reset`, `TechStoreDb` có 8 bảng cùng dữ liệu mẫu: 25 sản phẩm, 46 phiên bản điện thoại/laptop/tablet/phụ kiện. Mở cây **Tables** để xem, hoặc chạy các câu trong [docs/sql/inspect-database.sql](../docs/sql/inspect-database.sql). Phần 4 sẽ đọc kỹ từng bảng trong `database/schema.sql` và tập viết truy vấn trên dữ liệu này.
 
 ### Bước 4: Đọc hiểu frontend React (`web/`)
 
@@ -534,4 +535,18 @@ Làm theo mục **2. Chạy ở máy local** trong README: clone, `copy .env.exa
 
 ---
 
-<!-- Phần 2 sẽ được thêm vào đây khi học tới -->
+## Phần 2 trở đi: học theo task trên GitHub
+
+Từ Phần 2, mỗi phần được chia thành các **task** trên bảng Kanban **TechStore** (GitHub Projects). Mỗi task là một issue có hướng dẫn từng bước kèm code đã được chạy thử; nội dung giống hệt file tương ứng trong thư mục [`AI/tasks/`](tasks/README.md).
+
+| Phần | Task (issue) | Hướng dẫn |
+|---|---|---|
+| 2 | #3 Module categories · #4 Module brands | [p2-1](tasks/p2-1-categories-module.md) · [p2-2](tasks/p2-2-brands-module.md) |
+| 3 | #5 ValidationPipe (làm trước) · #6 DTO categories · #7 DTO brands | [p3-1](tasks/p3-1-validation-pipe.md) · [p3-2](tasks/p3-2-categories-dto.md) · [p3-3](tasks/p3-3-brands-dto.md) |
+| 4 | #8 ERD · #9 Truy vấn báo cáo · #10 Truy vấn tồn kho | [p4-1](tasks/p4-1-erd.md) · [p4-2](tasks/p4-2-report-queries.md) · [p4-3](tasks/p4-3-inventory-queries.md) |
+| 5 | #11 Entity Category · #12 Entity Brand | [p5-1](tasks/p5-1-category-entity.md) · [p5-2](tasks/p5-2-brand-entity.md) |
+| 6–14 | #13 – #44 | Hướng dẫn chi tiết được bổ sung khi team học tới |
+
+Luồng làm một task: nhận task (Assignees) → kéo sang **In progress** → tạo nhánh → làm theo hướng dẫn → Pull Request có `Closes #<số>` → teammate review → merge (thẻ tự sang **Done**).
+
+<!-- Phần 6 sẽ được thêm vào đây khi học tới -->

@@ -28,6 +28,9 @@ import { AppService } from './app.service.js';
           encrypt: true,
           // Local SQL Server uses a self-signed certificate. Never trust it blindly in production.
           trustServerCertificate: true,
+          // The database stores UTC (SYSUTCDATETIME()). TypeORM's default for SQL Server
+          // is local time, which would shift every date by the machine's UTC offset.
+          useUTC: true,
         },
         // Register every entity listed in TypeOrmModule.forFeature() automatically
         autoLoadEntities: true,
