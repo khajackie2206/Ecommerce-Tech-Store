@@ -412,21 +412,7 @@ describe('ProductsController', () => {
 
 ## Bước 5: Xem câu SQL TypeORM sinh ra
 
-Trong `src/app.module.ts`, thêm vào cấu hình `TypeOrmModule.forRootAsync`, ngay dưới dòng `synchronize`:
-
-```ts
-        // DB_LOGGING=true prints every SQL query TypeORM sends (handy while learning)
-        logging: config.get('DB_LOGGING') === 'true',
-```
-
-Thêm vào cuối `.env.example` (và `.env` của bạn):
-
-```
-# true = print every SQL query in the API log
-DB_LOGGING=false
-```
-
-Đặt `DB_LOGGING=true` trong `.env`, khởi động lại API, gọi `GET /api/v1/products?category=laptop`. Log hiện **đúng 2 câu** `query:` cho mỗi request: một lấy dữ liệu, một đếm tổng. Nếu viết kiểu lấy danh sách sản phẩm rồi lặp từng sản phẩm để hỏi giá, sẽ thành 1 + 25 câu: đó là lỗi **N+1**.
+Biến `DB_LOGGING` đã được thêm ở task "Module categories" (Phần 2). Đặt `DB_LOGGING=true` trong `.env`, khởi động lại API, gọi `GET /api/v1/products?category=laptop`. Log hiện **đúng 2 câu** `query:` cho mỗi request: một lấy dữ liệu, một đếm tổng. Nếu viết kiểu lấy danh sách sản phẩm rồi lặp từng sản phẩm để hỏi giá, sẽ thành 1 + 25 câu: đó là lỗi **N+1**.
 
 ## Bước 6: Test e2e
 

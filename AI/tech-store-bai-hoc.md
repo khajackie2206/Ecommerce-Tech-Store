@@ -15,10 +15,10 @@ File này được cập nhật sau mỗi phần học. Làm xong phần nào th
 | | Phần | Nội dung | Giáo trình NestJS |
 |---|---|---|---|
 | [ ] | **1** | Chạy source dựng sẵn, đọc hiểu: NestJS, SQL Server (Docker), React, proxy | Bài 1, 3, một phần Bài 7 |
-| [ ] | 2 | Controller, service, module, dependency injection: module `categories`, `brands` (lưu tạm trong bộ nhớ) | Bài 3, 4 |
+| [ ] | 2 | Controller, service, module, dependency injection, TypeORM (entity, repository): module `categories`, `brands` đọc/ghi thẳng SQL Server | Bài 3, 4, 7 |
 | [ ] | 3 | DTO và kiểm tra dữ liệu đầu vào (`ValidationPipe`, class-validator) | Bài 5 |
 | [ ] | 4 | SQL Server cơ bản: đọc hiểu `database/schema.sql` và `seed.sql`, tự viết SELECT, JOIN, GROUP BY, JSON trên dữ liệu điện thoại/laptop | Bài 6 |
-| [ ] | 5 | TypeORM: viết entity khớp với bảng có sẵn, repository, chuyển `categories`/`brands` sang đọc/ghi SQL Server | Bài 7 |
+| — | 5 | (Đã gộp vào Phần 2: entity và repository được học ngay từ module đầu tiên) | |
 | [ ] | 6 | Sản phẩm và phiên bản (màu, dung lượng, giá, tồn kho): quan hệ bảng, lọc, tìm kiếm, sắp xếp, phân trang | Bài 8 |
 | [ ] | 7 | Đăng ký, đăng nhập JWT, guard toàn cục, phân quyền admin/khách hàng | Bài 9 |
 | [ ] | 8 | Swagger và unit test (Vitest) | Bài 10 |
@@ -243,8 +243,8 @@ export class AppModule {}
   - `getOrThrow`: thiếu biến trong `.env` thì báo lỗi **ngay khi khởi động**, thay vì chạy rồi lỗi khó hiểu về sau.
   - `type: 'mssql'`: dùng driver `mssql` để nói chuyện với SQL Server.
   - `trustServerCertificate: true`: SQL Server ở máy local dùng chứng chỉ tự ký. **Không** dùng tuỳ chọn này với server thật.
-  - `autoLoadEntities: true`: tự nạp các entity (class mô tả bảng) mà module khai báo. Từ Phần 5 sẽ dùng.
-  - `synchronize`: TypeORM tự tạo và sửa bảng cho khớp với entity mỗi lần khởi động. Rất tiện khi học, nhưng có thể **xoá cột và mất dữ liệu**. Vì vậy nó được điều khiển bằng biến `DB_SYNCHRONIZE` trong `.env`. Dự án này để **`false`**: bảng được tạo bằng file `database/schema.sql`, còn entity ở Phần 5 sẽ viết cho khớp với bảng có sẵn. Phần 14 sẽ thay file SQL bằng migration.
+  - `autoLoadEntities: true`: tự nạp các entity (class mô tả bảng) mà module khai báo. Từ Phần 2 sẽ dùng.
+  - `synchronize`: TypeORM tự tạo và sửa bảng cho khớp với entity mỗi lần khởi động. Rất tiện khi học, nhưng có thể **xoá cột và mất dữ liệu**. Vì vậy nó được điều khiển bằng biến `DB_SYNCHRONIZE` trong `.env`. Dự án này để **`false`**: bảng được tạo bằng file `database/schema.sql`, còn entity ở Phần 2 sẽ viết cho khớp với bảng có sẵn. Phần 14 sẽ thay file SQL bằng migration.
 
 #### `server/src/app.service.ts`: service
 
@@ -277,7 +277,7 @@ export class AppService {
 - `@Injectable()`: báo cho NestJS biết nó được phép **tự tạo** class này và **tiêm** (inject) vào chỗ khác cần dùng.
 - `constructor(private readonly dataSource: DataSource) {}`: đây là **dependency injection**. Bạn không hề viết `new DataSource(...)`. NestJS thấy constructor cần một `DataSource`, liền đưa kết nối mà `TypeOrmModule` đã tạo vào. Phần 2 sẽ học kỹ cơ chế này.
 - `private readonly`: vừa khai báo thuộc tính `this.dataSource`, vừa gán giá trị chỉ trong một dòng. `readonly` nghĩa là không gán lại được.
-- `dataSource.query('SELECT 1')`: chạy một câu SQL tối thiểu để biết database còn sống. Từ Phần 5 sẽ dùng repository thay vì viết SQL tay.
+- `dataSource.query('SELECT 1')`: chạy một câu SQL tối thiểu để biết database còn sống. Từ Phần 2 sẽ dùng repository thay vì viết SQL tay.
 - `toISOString()`: API luôn trả giờ UTC (`2026-11-06T14:58:08.721Z`), để frontend tự đổi sang giờ Việt Nam.
 - `ApiInfo`, `HealthStatus` (khai báo ở đầu file) là `interface`, mô tả hình dạng dữ liệu trả về. TypeScript báo lỗi ngay khi gõ nếu trả thiếu field hoặc sai kiểu.
 
@@ -541,10 +541,9 @@ Từ Phần 2, mỗi phần được chia thành các **task** trên bảng Kanb
 
 | Phần | Task (issue) | Hướng dẫn |
 |---|---|---|
-| 2 | #3 Module categories · #4 Module brands | [p2-1](tasks/p2-1-categories-module.md) · [p2-2](tasks/p2-2-brands-module.md) |
+| 2 | #3 Module categories (SQL Server) · #4 Module brands (SQL Server) | [p2-1](tasks/p2-1-categories-module.md) · [p2-2](tasks/p2-2-brands-module.md) |
 | 3 | #5 ValidationPipe (làm trước) · #6 DTO categories · #7 DTO brands | [p3-1](tasks/p3-1-validation-pipe.md) · [p3-2](tasks/p3-2-categories-dto.md) · [p3-3](tasks/p3-3-brands-dto.md) |
 | 4 | #8 ERD · #9 Truy vấn báo cáo · #10 Truy vấn tồn kho | [p4-1](tasks/p4-1-erd.md) · [p4-2](tasks/p4-2-report-queries.md) · [p4-3](tasks/p4-3-inventory-queries.md) |
-| 5 | #11 Entity Category · #12 Entity Brand | [p5-1](tasks/p5-1-category-entity.md) · [p5-2](tasks/p5-2-brand-entity.md) |
 | 6 | #13 Entity Product · #14 API danh sách sản phẩm · #15 API chi tiết sản phẩm · #16 Filter lỗi SQL (song song với #13) | [p6-1](tasks/p6-1-product-entities.md) · [p6-2](tasks/p6-2-product-list-api.md) · [p6-3](tasks/p6-3-product-detail-api.md) · [p6-4](tasks/p6-4-sql-exception-filter.md) |
 | 7 | #17 Entity User · #18 Đăng ký, đăng nhập JWT · #19 AuthGuard, @Public · #20 Phân quyền admin (làm theo thứ tự) | [p7-1](tasks/p7-1-user-entity.md) · [p7-2](tasks/p7-2-register-login.md) · [p7-3](tasks/p7-3-auth-guard.md) · [p7-4](tasks/p7-4-roles-guard.md) |
 | 8–14 | #21 – #44 | Hướng dẫn chi tiết được bổ sung khi team học tới |

@@ -8,7 +8,7 @@ Bật **ValidationPipe** cho toàn ứng dụng: từ giờ mọi dữ liệu cl
 
 ## Vì sao cần?
 
-**Nguyên tắc vàng: không bao giờ tin dữ liệu người dùng gửi lên.** Họ có thể gửi thiếu trường, sai kiểu, chuỗi dài 1 triệu ký tự, hoặc gửi thêm trường lạ như `"role": "admin"`. Ở Phần 2 bạn đã thấy: `PATCH {"id": 999}` đổi được cả `id`.
+**Nguyên tắc vàng: không bao giờ tin dữ liệu người dùng gửi lên.** Họ có thể gửi thiếu trường, sai kiểu, chuỗi dài 1 triệu ký tự, hoặc gửi thêm trường lạ như `"role": "admin"`. Ở Phần 2 bạn đã thấy: `PATCH {"createdAt": "2000-01-01T00:00:00Z"}` sửa được ngày tạo ngay trong SQL Server, `"isActive": "abc"` lọt qua, còn `"logoUrl": 12345` thì làm API trả 500.
 
 `ValidationPipe` đứng chặn ở cửa: request sai bị trả **400** ngay, service không phải viết thêm dòng kiểm tra nào.
 
@@ -142,4 +142,4 @@ Các URL trong test giờ có `/api/v1`, đúng như client thật gọi.
 - [ ] Giải thích được ý nghĩa của `whitelist`, `forbidNonWhitelisted`, `transform`
 - [ ] Pull Request có dòng `Closes #<số issue này>`, đã được teammate review
 
-Lúc này gửi `{"id": 999}` **vẫn** đổi được `id`. Đó là vì controller đang dùng `interface` (`CreateCategoryInput`): interface bị xoá khi biên dịch nên ValidationPipe không có gì để kiểm tra và cho qua hết. Hai task DTO tiếp theo thay interface bằng **class** có decorator thì ValidationPipe mới bắt đầu chặn.
+Lúc này gửi `PATCH /api/v1/categories/<id>` với `{"createdAt": "1999-01-01T00:00:00Z"}` **vẫn** trả 200 và sửa được database. Đó là vì controller đang dùng `interface` (`CreateCategoryInput`): interface bị xoá khi biên dịch nên ValidationPipe không có gì để kiểm tra và cho qua hết. Hai task DTO tiếp theo thay interface bằng **class** có decorator thì ValidationPipe mới bắt đầu chặn.

@@ -83,87 +83,129 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Brand } from './brand.interface.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Brand } from './brand.entity.js';
 import type { CreateBrandDto } from './dto/create-brand.dto.js';
 import type { UpdateBrandDto } from './dto/update-brand.dto.js';
 
-// Builds the starting data from a short list of names
-const SEED_BRANDS = [
-  'Apple',
-  'Samsung',
-  'Xiaomi',
-  'OPPO',
-  'vivo',
-  'ASUS',
-  'Dell',
-  'HP',
-  'Lenovo',
-  'Acer',
-];
-
 @Injectable()
 export class BrandsService {
-  // Temporary in-memory storage, replaced by SQL Server in Part 5.
-  // It lives as long as the process: restarting the API resets the data.
-  private brands: Brand[] = SEED_BRANDS.map((name, index) => ({
-    id: index + 1,
-    name,
-    slug: name.toLowerCase(),
-    logoUrl: null,
-    isActive: true,
-    createdAt: new Date(),
-  }));
-  private nextId = SEED_BRANDS.length + 1;
+  // Repository<Brand>: find/save/remove... on the Brands table,
+  // provided by TypeOrmModule.forFeature([Brand]) in BrandsModule
+  constructor(
+    @InjectRepository(Brand)
+    private readonly brandsRepo: Repository<Brand>,
+  ) {}
 
-  findAll(): Brand[] {
-    // Copy before sorting so the stored array is not reordered
-    return [...this.brands].sort((a, b) => a.name.localeCompare(b.name));
+  // SELECT ... FROM Brands ORDER BY name
+  findAll(): Promise<Brand[]> {
+    return this.brandsRepo.find({ order: { name: 'ASC' } });
   }
 
-  findOne(id: number): Brand {
-    const brand = this.brands.find((b) => b.id === id);
+  // SELECT ... WHERE id = @0
+  async findOne(id: number): Promise<Brand> {
+    const brand = await this.brandsRepo.findOneBy({ id });
     if (!brand) throw new NotFoundException(`Không tìm thấy hãng id=${id}`);
     return brand;
   }
 
-  create(dto: CreateBrandDto): Brand {
-    this.ensureSlugIsFree(dto.slug);
-    const brand: Brand = {
-      id: this.nextId++,
-      name: dto.name,
-      slug: dto.slug,
-      logoUrl: dto.logoUrl ?? null,
-      isActive: dto.isActive ?? true,
-      createdAt: new Date(),
-    };
-    this.brands.push(brand);
-    return brand;
+  async create(dto: CreateBrandDto): Promise<Brand> {
+    await this.ensureSlugIsFree(dto.slug);
+    const brand = this.brandsRepo.create(dto); // builds the object, nothing saved yet
+    return this.brandsRepo.save(brand); // INSERT INTO Brands ...
   }
 
-  update(id: number, dto: UpdateBrandDto): Brand {
-    const brand = this.findOne(id); // throws 404 when missing
-    if (dto.slug !== undefined) this.ensureSlugIsFree(dto.slug, id);
-    // Safe now: the DTO only contains whitelisted fields, so "id" can't be overwritten
+  async update(id: number, dto: UpdateBrandDto): Promise<Brand> {
+    const brand = await this.findOne(id); // throws 404 when missing
+    if (dto.slug !== undefined) await this.ensureSlugIsFree(dto.slug, id);
     Object.assign(brand, dto);
-    return brand;
+    return this.brandsRepo.save(brand); // has an id, so this is an UPDATE
   }
 
-  remove(id: number): void {
-    this.findOne(id); // throws 404 when missing
-    this.brands = this.brands.filter((b) => b.id !== id);
+  async remove(id: number): Promise<void> {
+    const brand = await this.findOne(id); // throws 404 when missing
+    await this.brandsRepo.remove(brand); // DELETE FROM Brands WHERE id = @0
   }
 
-  // Slugs appear in URLs, so two brands can't share one (409 Conflict)
-  private ensureSlugIsFree(slug: string, exceptId?: number): void {
-    const taken = this.brands.some((b) => b.slug === slug && b.id !== exceptId);
-    if (taken) throw new ConflictException(`Slug "${slug}" đã được dùng`);
+  // Slugs appear in URLs, so two brands can't share one (409 Conflict).
+  // The UNIQUE constraint in SQL Server is the final safety net.
+  private async ensureSlugIsFree(
+    slug: string,
+    exceptId?: number,
+  ): Promise<void> {
+    const existing = await this.brandsRepo.findOneBy({ slug });
+    if (existing && existing.id !== exceptId) {
+      throw new ConflictException(`Slug "${slug}" đã được dùng`);
+    }
   }
 }
 ```
 
 Thay đổi so với Phần 2:
-- Xoá `CreateBrandInput`, `UpdateBrandInput`, thay bằng 2 DTO. Trong service dùng `import type` vì ở đây chỉ cần **kiểu**.
-- `ensureSlugIsFree`: không cho hai hãng trùng slug, trùng thì `ConflictException` → **409**. Khi sửa thì bỏ qua **chính hãng đang sửa** (`exceptId`), nếu không PATCH giữ nguyên slug cũng bị báo trùng với chính nó.
+- Xoá `Create...Input`, `Update...Input` (interface), thay bằng 2 DTO. Trong service dùng `import type` vì ở đây chỉ cần **kiểu**.
+- `create` giờ có `async`, vì phải `await this.ensureSlugIsFree(...)` trước khi ghi.
+- `ensureSlugIsFree`: chạy `SELECT ... WHERE slug = @0` trước khi ghi. Có hãng khác dùng slug đó thì ném `ConflictException` → **409** kèm thông báo rõ ràng, thay cho lỗi 500 từ database ở Phần 2.
+  - Khi sửa (`update`), phải bỏ qua **chính hãng đang sửa** (`exceptId`). Nếu không, PATCH giữ nguyên slug cũ cũng bị báo trùng với chính nó.
+  - Vẫn giữ ràng buộc `UNIQUE` trong database làm **lưới an toàn cuối cùng**: nếu hai request tạo cùng slug đến cùng lúc, cả hai có thể qua bước kiểm tra, nhưng database chỉ cho một dòng được ghi.
+- `private`: hàm phụ chỉ dùng trong class, bên ngoài không gọi được.
+- `Object.assign(brand, dto)` giờ an toàn: ValidationPipe đã loại mọi field không có trong DTO (`id`, `createdAt`...) trước khi tới đây.
+
+Thay toàn bộ `src/brands/brands.service.spec.ts` (thêm test cho trường hợp trùng slug):
+
+```ts
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Brand } from './brand.entity.js';
+import { BrandsService } from './brands.service.js';
+
+describe('BrandsService', () => {
+  let service: BrandsService;
+
+  // Fake repository: unit tests run without SQL Server
+  const fakeRepo = {
+    find: vi.fn(),
+    findOneBy: vi.fn(),
+    create: vi.fn((data: Partial<Brand>) => data),
+    save: vi.fn(async (data: Partial<Brand>) => ({ id: 1, ...data })),
+    remove: vi.fn(),
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BrandsService,
+        // Whoever asks for Repository<Brand> gets the fake one
+        { provide: getRepositoryToken(Brand), useValue: fakeRepo },
+      ],
+    }).compile();
+
+    service = module.get<BrandsService>(BrandsService);
+  });
+
+  it('creates a brand when the slug is free', async () => {
+    fakeRepo.findOneBy.mockResolvedValue(null); // no brand uses this slug
+    const result = await service.create({ name: 'Google', slug: 'google' });
+    expect(result).toEqual({ id: 1, name: 'Google', slug: 'google' });
+  });
+
+  it('rejects a duplicate slug with 409', async () => {
+    fakeRepo.findOneBy.mockResolvedValue({ id: 1, slug: 'apple' });
+    await expect(
+      service.create({ name: 'Apple', slug: 'apple' }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('throws 404 when the brand does not exist', async () => {
+    fakeRepo.findOneBy.mockResolvedValue(null);
+    await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+  });
+});
+```
+
+`fakeRepo.findOneBy.mockResolvedValue({ id: ..., slug: ... })`: giả như database **đã có** một dòng dùng slug này, để kiểm tra service ném 409.
 
 ## Bước 4: Controller dùng DTO
 
@@ -212,12 +254,13 @@ Content-Type: application/json
   "logoUrl": "not-a-url"
 }
 
-### Mass assignment is now blocked -> 400 "property id should not exist"
+### Mass assignment is now blocked -> 400, nothing reaches SQL Server
 PATCH {{baseUrl}}/brands/1
 Content-Type: application/json
 
 {
-  "id": 999
+  "id": 999,
+  "createdAt": "2000-01-01T00:00:00Z"
 }
 
 ### Duplicate slug -> 409
@@ -229,7 +272,7 @@ Content-Type: application/json
   "slug": "apple"
 }
 
-### Valid -> 201
+### Valid -> 201 (409 if "google" is still there from Part 2: run npm run db:reset first)
 POST {{baseUrl}}/brands
 Content-Type: application/json
 

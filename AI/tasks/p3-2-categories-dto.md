@@ -84,104 +84,130 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Category } from './category.interface.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Category } from './category.entity.js';
 import type { CreateCategoryDto } from './dto/create-category.dto.js';
 import type { UpdateCategoryDto } from './dto/update-category.dto.js';
 
 @Injectable()
 export class CategoriesService {
-  // Temporary in-memory storage, replaced by SQL Server in Part 5.
-  // It lives as long as the process: restarting the API resets the data.
-  private categories: Category[] = [
-    {
-      id: 1,
-      name: 'Điện thoại',
-      slug: 'dien-thoai',
-      sortOrder: 1,
-      isActive: true,
-      createdAt: new Date(),
-    },
-    {
-      id: 2,
-      name: 'Laptop',
-      slug: 'laptop',
-      sortOrder: 2,
-      isActive: true,
-      createdAt: new Date(),
-    },
-    {
-      id: 3,
-      name: 'Máy tính bảng',
-      slug: 'tablet',
-      sortOrder: 3,
-      isActive: true,
-      createdAt: new Date(),
-    },
-    {
-      id: 4,
-      name: 'Phụ kiện',
-      slug: 'phu-kien',
-      sortOrder: 4,
-      isActive: true,
-      createdAt: new Date(),
-    },
-  ];
-  private nextId = 5;
+  // Repository<Category>: find/save/remove... on the Categories table,
+  // provided by TypeOrmModule.forFeature([Category]) in CategoriesModule
+  constructor(
+    @InjectRepository(Category)
+    private readonly categoriesRepo: Repository<Category>,
+  ) {}
 
-  findAll(): Category[] {
-    // Copy before sorting so the stored array is not reordered
-    return [...this.categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  // SELECT ... FROM Categories ORDER BY sortOrder
+  findAll(): Promise<Category[]> {
+    return this.categoriesRepo.find({ order: { sortOrder: 'ASC' } });
   }
 
-  findOne(id: number): Category {
-    const category = this.categories.find((c) => c.id === id);
+  // SELECT ... WHERE id = @0
+  async findOne(id: number): Promise<Category> {
+    const category = await this.categoriesRepo.findOneBy({ id });
     if (!category)
       throw new NotFoundException(`Không tìm thấy danh mục id=${id}`);
     return category;
   }
 
-  create(dto: CreateCategoryDto): Category {
-    this.ensureSlugIsFree(dto.slug);
-    const category: Category = {
-      id: this.nextId++,
-      name: dto.name,
-      slug: dto.slug,
-      sortOrder: dto.sortOrder ?? 0,
-      isActive: dto.isActive ?? true,
-      createdAt: new Date(),
-    };
-    this.categories.push(category);
-    return category;
+  async create(dto: CreateCategoryDto): Promise<Category> {
+    await this.ensureSlugIsFree(dto.slug);
+    const category = this.categoriesRepo.create(dto); // builds the object, nothing saved yet
+    return this.categoriesRepo.save(category); // INSERT INTO Categories ...
   }
 
-  update(id: number, dto: UpdateCategoryDto): Category {
-    const category = this.findOne(id); // throws 404 when missing
-    if (dto.slug !== undefined) this.ensureSlugIsFree(dto.slug, id);
-    // Safe now: the DTO only contains whitelisted fields, so "id" can't be overwritten
+  async update(id: number, dto: UpdateCategoryDto): Promise<Category> {
+    const category = await this.findOne(id); // throws 404 when missing
+    if (dto.slug !== undefined) await this.ensureSlugIsFree(dto.slug, id);
     Object.assign(category, dto);
-    return category;
+    return this.categoriesRepo.save(category); // has an id, so this is an UPDATE
   }
 
-  remove(id: number): void {
-    this.findOne(id); // throws 404 when missing
-    this.categories = this.categories.filter((c) => c.id !== id);
+  async remove(id: number): Promise<void> {
+    const category = await this.findOne(id); // throws 404 when missing
+    await this.categoriesRepo.remove(category); // DELETE FROM Categories WHERE id = @0
   }
 
-  // Slugs appear in URLs, so two categories can't share one (409 Conflict)
-  private ensureSlugIsFree(slug: string, exceptId?: number): void {
-    const taken = this.categories.some(
-      (c) => c.slug === slug && c.id !== exceptId,
-    );
-    if (taken) throw new ConflictException(`Slug "${slug}" đã được dùng`);
+  // Slugs appear in URLs, so two categories can't share one (409 Conflict).
+  // The UNIQUE constraint in SQL Server is the final safety net.
+  private async ensureSlugIsFree(
+    slug: string,
+    exceptId?: number,
+  ): Promise<void> {
+    const existing = await this.categoriesRepo.findOneBy({ slug });
+    if (existing && existing.id !== exceptId) {
+      throw new ConflictException(`Slug "${slug}" đã được dùng`);
+    }
   }
 }
 ```
 
 Thay đổi so với Phần 2:
-- Xoá `CreateCategoryInput`, `UpdateCategoryInput`, thay bằng 2 DTO. Trong service dùng `import type` vì ở đây chỉ cần **kiểu**.
-- `ensureSlugIsFree`: slug xuất hiện trên URL (`/dien-thoai`), nên không cho hai danh mục trùng slug. Trùng thì `ConflictException` → **409**.
+- Xoá `Create...Input`, `Update...Input` (interface), thay bằng 2 DTO. Trong service dùng `import type` vì ở đây chỉ cần **kiểu**.
+- `create` giờ có `async`, vì phải `await this.ensureSlugIsFree(...)` trước khi ghi.
+- `ensureSlugIsFree`: chạy `SELECT ... WHERE slug = @0` trước khi ghi. Có danh mục khác dùng slug đó thì ném `ConflictException` → **409** kèm thông báo rõ ràng, thay cho lỗi 500 từ database ở Phần 2.
   - Khi sửa (`update`), phải bỏ qua **chính danh mục đang sửa** (`exceptId`). Nếu không, PATCH giữ nguyên slug cũ cũng bị báo trùng với chính nó.
+  - Vẫn giữ ràng buộc `UNIQUE` trong database làm **lưới an toàn cuối cùng**: nếu hai request tạo cùng slug đến cùng lúc, cả hai có thể qua bước kiểm tra, nhưng database chỉ cho một dòng được ghi.
 - `private`: hàm phụ chỉ dùng trong class, bên ngoài không gọi được.
+- `Object.assign(category, dto)` giờ an toàn: ValidationPipe đã loại mọi field không có trong DTO (`id`, `createdAt`...) trước khi tới đây.
+
+Thay toàn bộ `src/categories/categories.service.spec.ts` (thêm test cho trường hợp trùng slug):
+
+```ts
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { CategoriesService } from './categories.service.js';
+import { Category } from './category.entity.js';
+
+describe('CategoriesService', () => {
+  let service: CategoriesService;
+
+  // Fake repository: unit tests run without SQL Server
+  const fakeRepo = {
+    find: vi.fn(),
+    findOneBy: vi.fn(),
+    create: vi.fn((data: Partial<Category>) => data),
+    save: vi.fn(async (data: Partial<Category>) => ({ id: 1, ...data })),
+    remove: vi.fn(),
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CategoriesService,
+        // Whoever asks for Repository<Category> gets the fake one
+        { provide: getRepositoryToken(Category), useValue: fakeRepo },
+      ],
+    }).compile();
+
+    service = module.get<CategoriesService>(CategoriesService);
+  });
+
+  it('creates a category when the slug is free', async () => {
+    fakeRepo.findOneBy.mockResolvedValue(null); // no category uses this slug
+    const result = await service.create({ name: 'Đồng hồ', slug: 'dong-ho' });
+    expect(result).toEqual({ id: 1, name: 'Đồng hồ', slug: 'dong-ho' });
+  });
+
+  it('rejects a duplicate slug with 409', async () => {
+    fakeRepo.findOneBy.mockResolvedValue({ id: 2, slug: 'laptop' });
+    await expect(
+      service.create({ name: 'Laptop', slug: 'laptop' }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('throws 404 when the category does not exist', async () => {
+    fakeRepo.findOneBy.mockResolvedValue(null);
+    await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+  });
+});
+```
+
+`fakeRepo.findOneBy.mockResolvedValue({ id: ..., slug: ... })`: giả như database **đã có** một dòng dùng slug này, để kiểm tra service ném 409.
 
 ## Bước 4: Controller dùng DTO
 
@@ -243,12 +269,13 @@ Content-Type: application/json
   "role": "admin"
 }
 
-### Mass assignment is now blocked -> 400 "property id should not exist"
+### Mass assignment is now blocked -> 400, nothing reaches SQL Server
 PATCH {{baseUrl}}/categories/1
 Content-Type: application/json
 
 {
-  "id": 999
+  "id": 999,
+  "createdAt": "2000-01-01T00:00:00Z"
 }
 
 ### Duplicate slug -> 409
@@ -288,11 +315,13 @@ Kết quả mong đợi của request đầu tiên:
 ## Kiểm tra
 
 - [ ] 4 request ở Bước 6 trả đúng 400 / 400 / 409 / 400
-- [ ] Request hợp lệ vẫn tạo được (201) và sửa được (200)
+- [ ] Request hợp lệ vẫn tạo được (201) và sửa được (200); với `DB_LOGGING=true`, request bị 400 **không** có dòng `query:` nào: dữ liệu sai bị chặn trước khi tới database
+- [ ] `createdAt` của danh mục 1 trong SQL Server không đổi sau request "Mass assignment"
 - [ ] `npm run lint`, `npm test`, `npm run test:e2e` đều qua
 - [ ] Thử đổi import `CreateCategoryDto` trong controller thành `import type`, gửi lại request sai đầu tiên ở Bước 6: thông báo lỗi khác hẳn (không còn "Tên danh mục không được để trống", lại có "property slug should not exist"). Giải thích vì sao, rồi sửa lại
 - [ ] Pull Request có dòng `Closes #<số issue này>`, đã được teammate review
 
 ## Tự luyện
 
-Thêm field `description` (không bắt buộc, tối đa 500 ký tự) vào DTO và interface `Category`. Gửi một chuỗi 501 ký tự để thấy lỗi.
+1. Gửi `{"name": "<101 ký tự>", "slug": "test"}`: DTO chặn với "Tên danh mục tối đa 100 ký tự". Giờ tạm xoá `@MaxLength(100)` khỏi DTO và gửi lại: lần này request tới SQL Server và bị từ chối vì dài hơn cột `NVARCHAR(100)` (log có `Data type 0xE7 has an invalid data length`, API trả 500, client không biết sai ở đâu). Đó là lý do độ dài trong DTO phải **khớp** với độ dài cột. Nhớ trả `@MaxLength` lại.
+2. Viết thêm test e2e: `POST /api/v1/categories` với slug `laptop` (đã có trong dữ liệu mẫu) phải trả 409.

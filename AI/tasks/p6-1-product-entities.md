@@ -2,7 +2,7 @@
 
 Tạo module `products` và 3 entity khớp với 3 bảng sản phẩm có sẵn: `Product`, `ProductVariant`, `ProductImage`, cùng các **quan hệ** giữa chúng và với `Category`, `Brand`. Kết quả: một câu lệnh TypeORM lấy được sản phẩm kèm danh mục, hãng, phiên bản và ảnh.
 
-**Làm sau:** cả hai task Phần 5 (entity `Category`, `Brand`) đã merge. Bắt đầu bằng `git switch main`, `git pull`, `npm run setup`, `npm run db:reset`.
+**Làm sau:** cả hai task DTO của Phần 3 (`categories`, `brands`) đã merge. Bắt đầu bằng `git switch main`, `git pull`, `npm run setup`, `npm run db:reset`.
 
 **Đọc trước:** giáo trình Bài 8, mục 8.1–8.3 (quan hệ giữa các bảng).
 

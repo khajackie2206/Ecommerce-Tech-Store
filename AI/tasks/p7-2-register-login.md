@@ -303,7 +303,7 @@ import { AuthService } from './auth.service.js';
 export class AuthModule {}
 ```
 
-- `JwtModule.registerAsync` + `useFactory`: giống `TypeOrmModule.forRootAsync` ở Phần 5, cấu hình được đọc từ `ConfigService` sau khi `.env` đã nạp.
+- `JwtModule.registerAsync` + `useFactory`: giống `TypeOrmModule.forRootAsync` trong `app.module.ts` (Phần 1), cấu hình được đọc từ `ConfigService` sau khi `.env` đã nạp.
 - `global: true`: `JwtService` dùng được ở mọi module mà không phải import `JwtModule` lại. Task sau, `AuthGuard` sẽ cần nó.
 - `Number(...)`: biến môi trường luôn là chuỗi; `expiresIn` dạng số được hiểu là **giây**.
 

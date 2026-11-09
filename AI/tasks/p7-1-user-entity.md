@@ -4,7 +4,7 @@ Tạo module `users` với entity `User` khớp bảng `Users` có sẵn, và `U
 
 Task này chưa có route nào. Nó là nền cho task "Đăng ký và đăng nhập bằng JWT" ngay sau.
 
-**Làm sau:** Phần 5 (đã biết entity, Repository). Nên làm khi Phần 6 đã merge để ít xung đột ở `app.module.ts`. Bắt đầu bằng `git switch main`, `git pull`, `npm run setup`.
+**Làm sau:** Phần 3 (đã biết entity, Repository, DTO). Nên làm khi Phần 6 đã merge để ít xung đột ở `app.module.ts`. Bắt đầu bằng `git switch main`, `git pull`, `npm run setup`.
 
 **Đọc trước:** giáo trình Bài 9 (xác thực), phần entity User và ẩn mật khẩu.
 
