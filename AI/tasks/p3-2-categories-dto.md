@@ -64,13 +64,15 @@ Giải thích:
 Tạo `src/categories/dto/update-category.dto.ts`:
 
 ```ts
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateCategoryDto } from './create-category.dto.js';
 
 // Body accepted by PATCH /api/v1/categories/:id:
 // the same fields and rules as CreateCategoryDto, but every field is optional.
 export class UpdateCategoryDto extends PartialType(CreateCategoryDto) {}
 ```
+
+`PartialType` lấy từ `@nestjs/swagger` (không phải `@nestjs/mapped-types` như nhiều bài viết khác): bản này copy cả thông tin cho Swagger, nên trang `/api/docs` hiện đủ các field của DTO sửa. Dùng bản của `@nestjs/mapped-types` thì validation vẫn chạy, nhưng Swagger hiện `UpdateCategoryDto` **rỗng**.
 
 `PartialType` copy mọi field **kèm quy tắc** của `CreateCategoryDto`, rồi biến tất cả thành không bắt buộc. Sửa quy tắc ở một chỗ thì cả tạo lẫn sửa đều theo.
 
@@ -211,7 +213,7 @@ describe('CategoriesService', () => {
 
 ## Bước 4: Controller dùng DTO
 
-Trong `src/categories/categories.controller.ts`, thay đoạn import service:
+Trong `src/categories/categories.controller.ts`, xoá dòng `import { ApiBody } from '@nestjs/swagger';`, rồi thay đoạn import service:
 
 ```ts
 import { CategoriesService } from './categories.service.js';
@@ -220,7 +222,7 @@ import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
 ```
 
-và 2 method `create`, `update`:
+và 2 method `create`, `update` (cả các decorator `@ApiBody(...)` phía trên chúng cũng bỏ đi):
 
 ```ts
   // POST /api/v1/categories - responds 201 Created by default
@@ -238,6 +240,8 @@ và 2 method `create`, `update`:
     return this.categoriesService.update(id, dto);
   }
 ```
+
+Vì sao bỏ `@ApiBody`? Swagger đọc được **class**: nó tự lấy kiểu của `@Body()` là `CreateCategoryDto`, đọc các field và cả quy tắc (`@MaxLength` thành `maxLength`, `@Matches` thành `pattern`, field không có `@IsOptional` thành bắt buộc). Việc này do plugin `@nestjs/swagger` khai báo trong `server/nest-cli.json` làm lúc build. Mở http://localhost:3000/api/docs, kéo xuống mục **Schemas** để xem `CreateCategoryDto`.
 
 **Quan trọng:** trong controller, DTO phải import **bình thường**, không dùng `import type`. Lúc chạy, NestJS đọc kiểu của tham số `@Body()` để biết dùng class nào mà kiểm tra. `import type` làm class bị xoá khi biên dịch, nên ValidationPipe không còn biết DTO là gì. TypeScript và lint **không báo lỗi**, nhưng lúc chạy validation sai hoàn toàn: các quy tắc của DTO biến mất (tên rỗng không bị báo), còn field hợp lệ như `slug` lại bị báo "should not exist".
 
@@ -317,6 +321,7 @@ Kết quả mong đợi của request đầu tiên:
 - [ ] 4 request ở Bước 6 trả đúng 400 / 400 / 409 / 400
 - [ ] Request hợp lệ vẫn tạo được (201) và sửa được (200); với `DB_LOGGING=true`, request bị 400 **không** có dòng `query:` nào: dữ liệu sai bị chặn trước khi tới database
 - [ ] `createdAt` của danh mục 1 trong SQL Server không đổi sau request "Mass assignment"
+- [ ] Trong http://localhost:3000/api/docs, `POST /categories` và `PATCH /categories/{id}` hiện đủ field của `CreateCategoryDto`, `UpdateCategoryDto`; thử gửi body sai ngay trên Swagger thấy 400
 - [ ] `npm run lint`, `npm test`, `npm run test:e2e` đều qua
 - [ ] Thử đổi import `CreateCategoryDto` trong controller thành `import type`, gửi lại request sai đầu tiên ở Bước 6: thông báo lỗi khác hẳn (không còn "Tên danh mục không được để trống", lại có "property slug should not exist"). Giải thích vì sao, rồi sửa lại
 - [ ] Pull Request có dòng `Closes #<số issue này>`, đã được teammate review

@@ -16,14 +16,14 @@ Bật **ValidationPipe** cho toàn ứng dụng: từ giờ mọi dữ liệu cl
 
 ```powershell
 cd server
-npm install class-validator class-transformer @nestjs/mapped-types
+npm install class-validator class-transformer
 ```
 
 | Thư viện | Dùng để |
 |---|---|
 | `class-validator` | Các decorator kiểm tra: `@IsString()`, `@MaxLength()`, `@IsEmail()`... |
 | `class-transformer` | Đổi JSON thường thành object của class DTO (để validator đọc được decorator) |
-| `@nestjs/mapped-types` | `PartialType()`: tạo DTO "sửa" từ DTO "tạo" (dùng ở task tiếp theo) |
+| `@nestjs/swagger` (đã có sẵn) | Ngoài trang `/api/docs`, nó còn có `PartialType()`: tạo DTO "sửa" từ DTO "tạo" (dùng ở task tiếp theo) |
 
 ## Bước 2: Hàm cấu hình dùng chung
 
@@ -66,6 +66,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { configureApp } from './app.setup.js';
+import { setupSwagger } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -76,14 +77,22 @@ async function bootstrap() {
   // Run shutdown hooks (e.g. close the SQL Server connection) on Ctrl+C or SIGTERM
   app.enableShutdownHooks();
 
-  const port = app.get(ConfigService).get<number>('PORT', 3000);
+  const config = app.get(ConfigService);
+  const port = config.get<number>('PORT', 3000);
+
+  // API docs for development only: production should not advertise every endpoint
+  if (config.get('NODE_ENV') !== 'production') {
+    setupSwagger(app);
+    Logger.log(`API docs at http://localhost:${port}/api/docs`, 'Bootstrap');
+  }
+
   await app.listen(port);
   Logger.log(`API is running at http://localhost:${port}/api/v1`, 'Bootstrap');
 }
 await bootstrap();
 ```
 
-Dòng `app.setGlobalPrefix('api/v1')` cũ đã chuyển vào `configureApp`, nên xoá khỏi `main.ts`.
+Dòng `app.setGlobalPrefix('api/v1')` cũ đã chuyển vào `configureApp`, nên xoá khỏi `main.ts`. Phần Swagger (`setupSwagger`) giữ nguyên.
 
 ## Bước 4: Test e2e dùng cùng cấu hình
 

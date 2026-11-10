@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 import {
   BrandsService,
   type CreateBrandInput,
@@ -33,12 +34,24 @@ export class BrandsController {
   }
 
   // POST /api/v1/brands - responds 201 Created by default
+  // @ApiBody: Swagger can't read an interface, so we give it a sample body.
+  // Part 3 replaces the interface with a DTO class and this decorator goes away.
+  @ApiBody({
+    schema: {
+      example: {
+        name: 'Google',
+        slug: 'google',
+        logoUrl: 'https://placehold.co/200x80?text=Google',
+      },
+    },
+  })
   @Post()
   create(@Body() body: CreateBrandInput) {
     return this.brandsService.create(body);
   }
 
   // PATCH /api/v1/brands/1 - partial update
+  @ApiBody({ schema: { example: { isActive: false } } })
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
