@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { BrandsModule } from './brands/brands.module.js';
+import { CategoriesModule } from './categories/categories.module.js';
 
 @Module({
   imports: [
@@ -40,8 +41,8 @@ import { BrandsModule } from './brands/brands.module.js';
         synchronize: config.get('DB_SYNCHRONIZE') === 'true',
       }),
     }),
-
     BrandsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
