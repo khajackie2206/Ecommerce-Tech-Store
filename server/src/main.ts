@@ -2,13 +2,14 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { configureApp } from './app.setup.js';
 import { setupSwagger } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Every route is served under /api/v1, e.g. GET /api/v1/products
-  app.setGlobalPrefix('api/v1');
+  // Global prefix and validation (shared with the e2e tests)
+  configureApp(app);
 
   // Run shutdown hooks (e.g. close the SQL Server connection) on Ctrl+C or SIGTERM
   app.enableShutdownHooks();
