@@ -63,13 +63,15 @@ Giải thích:
 Tạo `src/brands/dto/update-brand.dto.ts`:
 
 ```ts
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateBrandDto } from './create-brand.dto.js';
 
 // Body accepted by PATCH /api/v1/brands/:id:
 // the same fields and rules as CreateBrandDto, but every field is optional.
 export class UpdateBrandDto extends PartialType(CreateBrandDto) {}
 ```
+
+`PartialType` lấy từ `@nestjs/swagger` (không phải `@nestjs/mapped-types` như nhiều bài viết khác): bản này copy cả thông tin cho Swagger, nên trang `/api/docs` hiện đủ các field của DTO sửa. Dùng bản của `@nestjs/mapped-types` thì validation vẫn chạy, nhưng Swagger hiện `UpdateBrandDto` **rỗng**.
 
 `PartialType` copy mọi field **kèm quy tắc** của `CreateBrandDto`, rồi biến tất cả thành không bắt buộc.
 
@@ -209,7 +211,7 @@ describe('BrandsService', () => {
 
 ## Bước 4: Controller dùng DTO
 
-Trong `src/brands/brands.controller.ts`, thay đoạn import service:
+Trong `src/brands/brands.controller.ts`, xoá dòng `import { ApiBody } from '@nestjs/swagger';`, rồi thay đoạn import service:
 
 ```ts
 import { BrandsService } from './brands.service.js';
@@ -218,7 +220,7 @@ import { CreateBrandDto } from './dto/create-brand.dto.js';
 import { UpdateBrandDto } from './dto/update-brand.dto.js';
 ```
 
-và 2 method `create`, `update`:
+và 2 method `create`, `update` (cả các decorator `@ApiBody(...)` phía trên chúng cũng bỏ đi):
 
 ```ts
   // POST /api/v1/brands - responds 201 Created by default
@@ -236,6 +238,8 @@ và 2 method `create`, `update`:
     return this.brandsService.update(id, dto);
   }
 ```
+
+Vì sao bỏ `@ApiBody`? Swagger đọc được **class**: nó tự lấy kiểu của `@Body()` là `CreateBrandDto`, đọc các field và cả quy tắc (`@MaxLength` thành `maxLength`, `@Matches` thành `pattern`, field không có `@IsOptional` thành bắt buộc). Việc này do plugin `@nestjs/swagger` khai báo trong `server/nest-cli.json` làm lúc build. Mở http://localhost:3000/api/docs, kéo xuống mục **Schemas** để xem `CreateBrandDto`.
 
 **Quan trọng:** trong controller, DTO phải import **bình thường**, không dùng `import type`. Lúc chạy, NestJS đọc kiểu của tham số `@Body()` để biết dùng class nào mà kiểm tra. `import type` làm class bị xoá khi biên dịch, nên ValidationPipe không còn biết DTO là gì. TypeScript và lint **không báo lỗi**, nhưng lúc chạy validation sai hoàn toàn: các quy tắc của DTO biến mất, còn field hợp lệ như `slug` lại bị báo "should not exist".
 
@@ -287,6 +291,7 @@ Content-Type: application/json
 
 - [ ] 4 request ở Bước 5 trả đúng 400 / 400 / 409 / 201
 - [ ] `PATCH` giữ nguyên slug cũ (`{"slug":"apple"}` cho hãng Apple) vẫn trả 200, không bị báo trùng
+- [ ] Trong http://localhost:3000/api/docs, `POST /brands` và `PATCH /brands/{id}` hiện đủ field của `CreateBrandDto`, `UpdateBrandDto`
 - [ ] `npm run lint`, `npm test`, `npm run test:e2e` đều qua
 - [ ] Pull Request có dòng `Closes #<số issue này>`, đã được teammate review
 

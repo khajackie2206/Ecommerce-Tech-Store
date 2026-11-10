@@ -206,6 +206,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 import {
   BrandsService,
   type CreateBrandInput,
@@ -230,12 +231,24 @@ export class BrandsController {
   }
 
   // POST /api/v1/brands - responds 201 Created by default
+  // @ApiBody: Swagger can't read an interface, so we give it a sample body.
+  // Part 3 replaces the interface with a DTO class and this decorator goes away.
+  @ApiBody({
+    schema: {
+      example: {
+        name: 'Google',
+        slug: 'google',
+        logoUrl: 'https://placehold.co/200x80?text=Google',
+      },
+    },
+  })
   @Post()
   create(@Body() body: CreateBrandInput) {
     return this.brandsService.create(body);
   }
 
   // PATCH /api/v1/brands/1 - partial update
+  @ApiBody({ schema: { example: { isActive: false } } })
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -259,6 +272,7 @@ Giải thích:
 - `@Param('id', ParseIntPipe)`: đổi `"1"` trên URL thành số `1`, gặp `"abc"` thì tự trả **400**.
 - `type CreateBrandInput`: bắt buộc import bằng `type` vì kiểu này dùng trong tham số có decorator (`@Body()`), nếu không TypeScript báo lỗi TS1272.
 - `@HttpCode(204)`: xoá xong trả 204, không có nội dung.
+- `@ApiBody({ schema: { example: ... } })` (từ `@nestjs/swagger`): Swagger (trang thử API ở `/api/docs`) không đọc được **interface** `CreateBrandInput`, nên ta đưa nó một body mẫu để có sẵn ô nhập. Phần 3 thay interface bằng DTO class thì Swagger tự hiểu và decorator này được xoá.
 - `remove` phải có `return`, để NestJS chờ service xong mới trả lời. Thiếu `return` thì xoá `id` không tồn tại vẫn ra 204.
 
 ## Bước 6: Test
@@ -354,6 +368,10 @@ describe('BrandsController', () => {
 
 ## Bước 7: Gọi thử, rồi xem dữ liệu trong SQL Server
 
+**Cách nhanh nhất: Swagger.** Chạy `npm run dev` ở thư mục gốc, mở http://localhost:3000/api/docs. Mỗi API là một dòng: bấm vào → **Try it out** → sửa body/tham số → **Execute**. Bên dưới hiện status, body trả về và lệnh `curl` tương ứng. Body mẫu của `POST` chính là `example` trong `@ApiBody` ở Bước 5: hãng "Google".
+
+Swagger tiện để bấm thử; file `.http` dưới đây thì lưu lại được các request trong repo để chạy lại và chia sẻ với teammate. Dùng cái nào cũng được.
+
 Tạo file `server/requests/brands.http` (extension **REST Client**):
 
 ```http
@@ -438,7 +456,7 @@ Thử xong muốn quay về dữ liệu mẫu: `npm run db:reset` ở thư mục
 
 ## Kiểm tra
 
-- [ ] Log khi khởi động có 5 dòng `Mapped {/api/v1/brands...}`
+- [ ] Log khi khởi động có 5 dòng `Mapped {/api/v1/brands...}`; nhóm **Brands** hiện trong http://localhost:3000/api/docs với body mẫu ở `POST`, `PATCH`
 - [ ] Đủ 5 API chạy đúng như bảng ở đầu, kể cả 404 và 400
 - [ ] Tạo, sửa, xoá qua API và thấy thay đổi trong SQL Server; tắt/bật API dữ liệu vẫn còn
 - [ ] `npm run lint`, `npm test` (trong `server`) đều qua

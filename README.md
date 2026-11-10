@@ -45,6 +45,7 @@ Mở http://localhost:5173. Trang hiện **"API: TechStore API ..."** và **"SQL
 | http://localhost:5173 | Web React. Request `/api` được Vite chuyển sang API |
 | http://localhost:3000/api/v1 | API NestJS |
 | http://localhost:3000/api/v1/health | Kiểm tra API và database: `{"status":"ok","database":"up"}` |
+| http://localhost:3000/api/docs | **Swagger**: xem và gọi thử mọi API ngay trên trình duyệt (**Try it out** → **Execute**) |
 | `localhost,1433` | SQL Server, đăng nhập bằng `sa` / mật khẩu `DB_PASSWORD` trong `.env` |
 
 Lần chạy `db:up` đầu tiên sẽ tải image SQL Server khoảng 1,5GB.
@@ -57,7 +58,7 @@ Dừng: `Ctrl+C` để tắt API và web. Muốn tắt SQL Server thì chạy `n
 npm run app:up      # build và chạy SQL Server + API + web trong Docker
 ```
 
-Mở http://localhost:8080. Tắt bằng `npm run app:down`. Chế độ này dùng để thử bản build giống production. Khi code hằng ngày, dùng `npm run dev` để được tự reload.
+Mở http://localhost:8080. Tắt bằng `npm run app:down`. Chế độ này dùng để thử bản build giống production, nên **không có Swagger** (chỉ bật khi `NODE_ENV` khác `production`). Khi code hằng ngày, dùng `npm run dev` để được tự reload và có Swagger.
 
 ## 3. Các lệnh
 
@@ -149,6 +150,7 @@ tech-store/
   server/                    # NestJS API
     src/
       main.ts                # khởi động app, tiền tố /api/v1
+      swagger.ts             # trang thử API ở /api/docs (plugin khai báo trong nest-cli.json)
       app.module.ts          # module gốc: đọc .env, kết nối SQL Server
       app.controller.ts      # GET /api/v1, GET /api/v1/health
       app.service.ts

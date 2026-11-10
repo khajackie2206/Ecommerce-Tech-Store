@@ -215,6 +215,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 import {
   CategoriesService,
   type CreateCategoryInput,
@@ -239,12 +240,20 @@ export class CategoriesController {
   }
 
   // POST /api/v1/categories - responds 201 Created by default
+  // @ApiBody: Swagger can't read an interface, so we give it a sample body.
+  // Part 3 replaces the interface with a DTO class and this decorator goes away.
+  @ApiBody({
+    schema: {
+      example: { name: 'Đồng hồ thông minh', slug: 'dong-ho', sortOrder: 5 },
+    },
+  })
   @Post()
   create(@Body() body: CreateCategoryInput) {
     return this.categoriesService.create(body);
   }
 
   // PATCH /api/v1/categories/1 - partial update
+  @ApiBody({ schema: { example: { name: 'Smartwatch' } } })
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -270,6 +279,7 @@ Giải thích:
 - `@Body()`: lấy JSON client gửi lên.
 - `type CreateCategoryInput`: chữ `type` trong import là bắt buộc. Với cấu hình của dự án (`isolatedModules` + `emitDecoratorMetadata`), một kiểu dùng trong tham số có decorator (`@Body() body: ...`) phải được import bằng `type`, nếu không TypeScript báo lỗi TS1272.
 - `@HttpCode(204)`: xoá thành công thì trả 204, không có nội dung. `POST` mặc định đã là 201, `GET`/`PATCH` là 200.
+- `@ApiBody({ schema: { example: ... } })` (từ `@nestjs/swagger`): Swagger (trang thử API ở `/api/docs`) tự đọc route, tham số và **class** để mô tả API, nhưng không đọc được **interface** (`CreateCategoryInput` biến mất khi chạy). Nên ta đưa cho nó một body mẫu. Ở Phần 3, DTO class thay cho interface thì Swagger tự hiểu, decorator này sẽ được xoá.
 - Method trả về Promise thì NestJS **chờ** kết quả rồi đổi sang JSON.
 - `remove` phải có `return`. Thiếu `return`, NestJS trả 204 **ngay**, không chờ service: xoá một `id` không tồn tại vẫn ra 204 "thành công", còn lỗi 404 bị ném ra sau khi đã trả lời.
 
@@ -386,6 +396,10 @@ và cùng dòng đó vào cuối `.env` của bạn, nhưng để `DB_LOGGING=tr
 
 ## Bước 8: Gọi thử, rồi xem dữ liệu trong SQL Server
 
+**Cách nhanh nhất: Swagger.** Chạy `npm run dev` ở thư mục gốc, mở http://localhost:3000/api/docs. Mỗi API là một dòng: bấm vào → **Try it out** → sửa body/tham số → **Execute**. Bên dưới hiện status, body trả về và lệnh `curl` tương ứng. Body mẫu của `POST` chính là `example` trong `@ApiBody` ở Bước 5: danh mục "Đồng hồ thông minh".
+
+Swagger tiện để bấm thử; file `.http` dưới đây thì lưu lại được các request trong repo để chạy lại và chia sẻ với teammate. Dùng cái nào cũng được.
+
 Dùng extension **REST Client** trong VS Code. Tạo file `server/requests/categories.http`:
 
 ```http
@@ -492,7 +506,7 @@ Thử xong muốn quay về dữ liệu mẫu: `npm run db:reset` ở thư mục
 
 ## Kiểm tra
 
-- [ ] Log khi khởi động có 5 dòng `Mapped {/api/v1/categories...}`
+- [ ] Log khi khởi động có 5 dòng `Mapped {/api/v1/categories...}`; nhóm **Categories** hiện trong http://localhost:3000/api/docs với body mẫu ở `POST`, `PATCH`
 - [ ] Đủ 5 API chạy đúng như bảng ở đầu, kể cả 404 và 400
 - [ ] Tạo, sửa, xoá qua API và thấy thay đổi trong SQL Server; tắt/bật API dữ liệu vẫn còn
 - [ ] `DB_SYNCHRONIZE` trong `.env` vẫn là `false`

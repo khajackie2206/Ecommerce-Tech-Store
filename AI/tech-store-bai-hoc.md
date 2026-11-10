@@ -21,7 +21,7 @@ File này được cập nhật sau mỗi phần học. Làm xong phần nào th
 | — | 5 | (Đã gộp vào Phần 2: entity và repository được học ngay từ module đầu tiên) | |
 | [ ] | 6 | Sản phẩm và phiên bản (màu, dung lượng, giá, tồn kho): quan hệ bảng, lọc, tìm kiếm, sắp xếp, phân trang | Bài 8 |
 | [ ] | 7 | Đăng ký, đăng nhập JWT, guard toàn cục, phân quyền admin/khách hàng | Bài 9 |
-| [ ] | 8 | Swagger và unit test (Vitest) | Bài 10 |
+| [ ] | 8 | Swagger đầy đủ (mô tả, ví dụ, mã lỗi; trang `/api/docs` đã có sẵn từ đầu) và unit test (Vitest) | Bài 10 |
 | [ ] | 9 | React: layout cửa hàng, trang chủ, danh sách sản phẩm có bộ lọc, trang chi tiết | React |
 | [ ] | 10 | React: đăng ký/đăng nhập, giỏ hàng | React |
 | [ ] | 11 | Đặt hàng: transaction trừ tồn kho, lưu giá lúc mua, lịch sử đơn hàng | Nâng cao |
@@ -171,6 +171,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { setupSwagger } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -181,7 +182,15 @@ async function bootstrap() {
   // Run shutdown hooks (e.g. close the SQL Server connection) on Ctrl+C or SIGTERM
   app.enableShutdownHooks();
 
-  const port = app.get(ConfigService).get<number>('PORT', 3000);
+  const config = app.get(ConfigService);
+  const port = config.get<number>('PORT', 3000);
+
+  // API docs for development only: production should not advertise every endpoint
+  if (config.get('NODE_ENV') !== 'production') {
+    setupSwagger(app);
+    Logger.log(`API docs at http://localhost:${port}/api/docs`, 'Bootstrap');
+  }
+
   await app.listen(port);
   Logger.log(`API is running at http://localhost:${port}/api/v1`, 'Bootstrap');
 }
@@ -192,6 +201,7 @@ await bootstrap();
 - `setGlobalPrefix('api/v1')`: thêm tiền tố cho **mọi** route. Chữ `v1` là phiên bản API. Sau này cần đổi API mà không làm hỏng app cũ thì làm thêm `v2` song song.
 - `enableShutdownHooks()`: khi bấm `Ctrl+C`, hoặc khi Docker gửi tín hiệu `SIGTERM` để tắt container, NestJS đóng kết nối SQL Server cho gọn rồi mới thoát.
 - `app.get(ConfigService)`: lấy service đọc cấu hình, rồi đọc biến `PORT` trong `.env`. Không có thì dùng 3000.
+- `setupSwagger(app)` (file `server/src/swagger.ts`): bật trang **Swagger** ở http://localhost:3000/api/docs. Trang này liệt kê mọi API, và cho gọi thử ngay trên trình duyệt: bấm vào một API → **Try it out** → **Execute**. Swagger tự đọc controller, tham số, entity và DTO nhờ plugin `@nestjs/swagger` khai báo trong `server/nest-cli.json`. Chỉ bật khi `NODE_ENV` khác `production`: bản chạy thật không nên công khai danh sách API. File JSON mô tả API nằm ở `/api/docs-json`, Postman có thể import file này.
 - `Logger.log(...)`: logger có sẵn của NestJS, in log cùng định dạng với log của framework. Nên dùng thay cho `console.log`.
 - `await bootstrap()` nằm ở cấp ngoài cùng của file (**top-level await**). Cách viết này chỉ dùng được vì project là ES Module (`"type": "module"` trong `server/package.json`).
 - `import ... from './app.module.js'`: dù file thật là `.ts`, vẫn phải ghi đuôi **`.js`**. Code được biên dịch ra `.js` rồi mới chạy, nên đường dẫn phải đúng với file sau khi biên dịch. Quên đuôi `.js` sẽ gặp lỗi `Cannot find module`.
