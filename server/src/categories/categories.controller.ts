@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { CategoriesService, type UpdateCategoryInput, type CreateCategoryInput } from './categories.service.js';
+import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { UpdateCategoryDto } from './dto/update-caregory.dto.js';
 
 @Controller('categories')
 export class CategoriesController {
@@ -17,13 +19,13 @@ export class CategoriesController {
     }
 
     @Post()
-    create(@Body() body: CreateCategoryInput) {
-        return this.categoriesService.create(body);
+    create(@Body() dto: CreateCategoryDto) {
+        return this.categoriesService.create(dto);
     }
 
     @Patch(':id')
-    update(@Param('id', ParseIntPipe) id:number, @Body() body: UpdateCategoryInput ) {
-        return this.categoriesService.update(id, body);
+    update(@Param('id', ParseIntPipe) id:number, @Body() dto: UpdateCategoryDto ) {
+        return this.categoriesService.update(id, dto);
     }
 
     @Delete(':id')

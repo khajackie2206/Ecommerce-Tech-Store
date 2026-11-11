@@ -38,4 +38,11 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect({ status: 'ok', database: 'up' });
   });
+
+    it('POST /api/v1/categories rejects unknown fields with 400', () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .send({ name: 'Test', slug: 'test', role: 'admin' })
+      .expect(400);
+  });
 });
