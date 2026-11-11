@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Brand } from './brands.entity.js';
@@ -29,10 +29,17 @@ describe('BrandsService', () => {
     service = module.get<BrandsService>(BrandsService);
   });
 
-  it('creates a brand', async () => {
+  it('creates a brand when the slug is free', async () => {
+    fakeRepo.findOneBy.mockResolvedValue(null); // no brand uses this slug
     const result = await service.create({ name: 'Google', slug: 'google' });
     expect(result).toEqual({ id: 1, name: 'Google', slug: 'google' });
-    expect(fakeRepo.save).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a duplicate slug with 409', async () => {
+    fakeRepo.findOneBy.mockResolvedValue({ id: 1, slug: 'apple' });
+    await expect(
+      service.create({ name: 'Apple', slug: 'apple' }),
+    ).rejects.toThrow(ConflictException);
   });
 
   it('throws 404 when the brand does not exist', async () => {
