@@ -9,12 +9,9 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiBody } from '@nestjs/swagger';
-import {
-  BrandsService,
-  type CreateBrandInput,
-  type UpdateBrandInput,
-} from './brands.service.js';
+import { BrandsService } from './brands.service.js';
+import { CreateBrandDto } from './dto/create-brand.dto.js';
+import { UpdateBrandDto } from './dto/update-brand.dto.js';
 
 // Every route here starts with /api/v1/brands (global prefix + 'brands')
 @Controller('brands')
@@ -34,30 +31,19 @@ export class BrandsController {
   }
 
   // POST /api/v1/brands - responds 201 Created by default
-  // @ApiBody: Swagger can't read an interface, so we give it a sample body.
   // Part 3 replaces the interface with a DTO class and this decorator goes away.
-  @ApiBody({
-    schema: {
-      example: {
-        name: 'Google',
-        slug: 'google',
-        logoUrl: 'https://placehold.co/200x80?text=Google',
-      },
-    },
-  })
   @Post()
-  create(@Body() body: CreateBrandInput) {
+  create(@Body() body: CreateBrandDto) {
     return this.brandsService.create(body);
   }
 
-  // PATCH /api/v1/brands/1 - partial update
-  @ApiBody({ schema: { example: { isActive: false } } })
+    // PATCH /api/v1/brands/1 - partial update
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: UpdateBrandInput,
+    @Body() dto: UpdateBrandDto,
   ) {
-    return this.brandsService.update(id, body);
+    return this.brandsService.update(id, dto);
   }
 
   // DELETE /api/v1/brands/1 - 204 No Content: success, empty body
