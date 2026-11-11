@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { configureApp } from './../src/app.setup.js';
 
 // End-to-end test: boots the real app, so SQL Server must be running (npm run db:up)
 describe('AppController (e2e)', () => {
@@ -14,6 +15,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureApp(app); // same prefix and validation as main.ts
     await app.init();
   });
 
@@ -21,18 +23,18 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('GET / returns the API info', () => {
+  it('GET /api/v1 returns the API info', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1')
       .expect(200)
       .expect((res) => {
         expect(res.body.name).toBe('TechStore API');
       });
   });
 
-  it('GET /health reports the database as up', () => {
+  it('GET /api/v1/health reports the database as up', () => {
     return request(app.getHttpServer())
-      .get('/health')
+      .get('/api/v1/health')
       .expect(200)
       .expect({ status: 'ok', database: 'up' });
   });
