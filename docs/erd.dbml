@@ -1,0 +1,93 @@
+Table Users {
+  id uniqueidentifier [pk]
+  email nvarchar(255) [unique, not null]
+  passwordHash nvarchar(255) [not null]
+  fullName nvarchar(100) [not null]
+  phone varchar(20)
+  role varchar(20) [not null, note: 'customer | admin']
+  isActive bit [not null]
+  createdAt datetime2 [not null]
+  updatedAt datetime2 [not null]
+}
+
+Table Categories {
+  id int [pk, increment]
+  name nvarchar(100) [not null]
+  slug varchar(120) [unique, not null]
+  sortOrder int [not null]
+  isActive bit [not null]
+  createdAt datetime2 [not null]
+}
+
+Table Brands {
+  id int [pk, increment]
+  name nvarchar(100) [not null]
+  slug varchar(120) [unique, not null]
+  logoUrl nvarchar(500)
+  isActive bit [not null]
+  createdAt datetime2 [not null]
+}
+
+Table Products {
+  id int [pk, increment]
+  categoryId int [not null, ref: > Categories.id]
+  brandId int [not null, ref: > Brands.id]
+  name nvarchar(200) [not null]
+  slug varchar(220) [unique, not null]
+  shortDescription nvarchar(500)
+  description nvarchar(max)
+  specs nvarchar(max) [note: 'JSON']
+  thumbnailUrl nvarchar(500)
+  isFeatured bit [not null]
+  isActive bit [not null]
+  createdAt datetime2 [not null]
+  updatedAt datetime2 [not null]
+}
+
+Table ProductVariants {
+  id int [pk, increment]
+  productId int [not null, ref: > Products.id]
+  sku varchar(50) [unique, not null]
+  name nvarchar(150) [not null]
+  color nvarchar(50)
+  storage nvarchar(50)
+  price decimal(18,2) [not null]
+  salePrice decimal(18,2)
+  stock int [not null]
+  isActive bit [not null]
+  createdAt datetime2 [not null]
+}
+
+Table ProductImages {
+  id int [pk, increment]
+  productId int [not null, ref: > Products.id]
+  url nvarchar(500) [not null]
+  sortOrder int [not null]
+}
+
+Table Orders {
+  id uniqueidentifier [pk]
+  code varchar(20) [unique, not null]
+  userId uniqueidentifier [not null, ref: > Users.id]
+  status varchar(20) [not null, note: 'pending | confirmed | shipping | completed | cancelled']
+  paymentMethod varchar(20) [not null]
+  subtotal decimal(18,2) [not null]
+  shippingFee decimal(18,2) [not null]
+  total decimal(18,2) [not null]
+  shippingName nvarchar(100) [not null]
+  shippingPhone varchar(20) [not null]
+  shippingAddress nvarchar(500) [not null]
+  note nvarchar(500)
+  createdAt datetime2 [not null]
+  updatedAt datetime2 [not null]
+}
+
+Table OrderItems {
+  id int [pk, increment]
+  orderId uniqueidentifier [not null, ref: > Orders.id]
+  variantId int [not null, ref: > ProductVariants.id]
+  productName nvarchar(200) [not null]
+  variantName nvarchar(150) [not null]
+  unitPrice decimal(18,2) [not null]
+  quantity int [not null]
+}

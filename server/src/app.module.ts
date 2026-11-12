@@ -42,6 +42,8 @@ import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
         // Create/alter tables to match entities on startup. Local learning only:
         // it can drop columns and lose data. Production uses migrations instead.
         synchronize: config.get('DB_SYNCHRONIZE') === 'true',
+        // DB_LOGGING=true prints every SQL query TypeORM sends (handy while learning)
+        logging: config.get('DB_LOGGING') === 'true',
       }),
     }),
     BrandsModule,

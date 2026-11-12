@@ -31,18 +31,14 @@ export class BrandsController {
   }
 
   // POST /api/v1/brands - responds 201 Created by default
-  // Part 3 replaces the interface with a DTO class and this decorator goes away.
   @Post()
   create(@Body() body: CreateBrandDto) {
     return this.brandsService.create(body);
   }
 
-    // PATCH /api/v1/brands/1 - partial update
+  // PATCH /api/v1/brands/1 - partial update
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBrandDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBrandDto) {
     return this.brandsService.update(id, dto);
   }
 

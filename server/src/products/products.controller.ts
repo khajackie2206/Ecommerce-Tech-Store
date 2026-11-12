@@ -4,15 +4,15 @@ import { ListProductsQueryDto } from './dto/list-products-query.dto.js';
 
 @Controller('products')
 export class ProductsController {
-    constructor(private readonly productService: ProductsService) {}
+  constructor(private readonly productService: ProductsService) {}
 
-    @Get()
-    findAll(@Query() query: ListProductsQueryDto) {
-        return this.productService.findAll(query);
-    }
+  @Get()
+  findAll(@Query() query: ListProductsQueryDto) {
+    return this.productService.findAll(query);
+  }
 
-    @Get(':slug')
-    findBySlug(@Param('slug') slug: string) {
-        return this.productService.findBySlug(slug);
-    }
+  @Get(':slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.productService.findBySlug(slug);
+  }
 }
