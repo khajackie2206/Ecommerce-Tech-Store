@@ -556,7 +556,13 @@ Từ Phần 2, mỗi phần được chia thành các **task** trên bảng Kanb
 | 4 | #8 ERD · #9 Truy vấn báo cáo · #10 Truy vấn tồn kho | [p4-1](tasks/p4-1-erd.md) · [p4-2](tasks/p4-2-report-queries.md) · [p4-3](tasks/p4-3-inventory-queries.md) |
 | 6 | #13 Entity Product · #14 API danh sách sản phẩm · #15 API chi tiết sản phẩm · #16 Filter lỗi SQL (song song với #13) | [p6-1](tasks/p6-1-product-entities.md) · [p6-2](tasks/p6-2-product-list-api.md) · [p6-3](tasks/p6-3-product-detail-api.md) · [p6-4](tasks/p6-4-sql-exception-filter.md) |
 | 7 | #17 Entity User · #18 Đăng ký, đăng nhập JWT · #19 AuthGuard, @Public · #20 Phân quyền admin (làm theo thứ tự) | [p7-1](tasks/p7-1-user-entity.md) · [p7-2](tasks/p7-2-register-login.md) · [p7-3](tasks/p7-3-auth-guard.md) · [p7-4](tasks/p7-4-roles-guard.md) |
-| 8–14 | #21 – #44 | Hướng dẫn chi tiết được bổ sung khi team học tới |
+| 8 | #21 Swagger đầy đủ · #22 Unit test categories, brands · #23 Unit test products, auth (làm song song được) | [p8-1](tasks/p8-1-swagger-docs.md) · [p8-2](tasks/p8-2-unit-test-categories-brands.md) · [p8-3](tasks/p8-3-unit-test-products-auth.md) |
+| 9 | #24 Layout, Router · #25 API client, TanStack Query · #26 Trang chủ · #27 Danh sách sản phẩm · #28 Chi tiết sản phẩm | [p9-1](tasks/p9-1-layout-router.md) · [p9-2](tasks/p9-2-api-client-query.md) · [p9-3](tasks/p9-3-home-page.md) · [p9-4](tasks/p9-4-product-list-page.md) · [p9-5](tasks/p9-5-product-detail-page.md) |
+| 10 | #29 Đăng ký, đăng nhập (web) · #30 Giỏ hàng | [p10-1](tasks/p10-1-auth-pages.md) · [p10-2](tasks/p10-2-cart.md) |
+| 11 | #31 API đặt hàng (transaction) · #32 API lịch sử, huỷ đơn · #33 Trang thanh toán · #34 Trang lịch sử đơn (giao diện làm sau API cùng phần) | [p11-1](tasks/p11-1-orders-api.md) · [p11-2](tasks/p11-2-order-history-cancel.md) · [p11-3](tasks/p11-3-checkout-page.md) · [p11-4](tasks/p11-4-order-history-page.md) |
+| 12 | #35 API admin sản phẩm · #36 Upload ảnh · #37 API admin đơn hàng · #38 Giao diện admin sản phẩm · #39 Giao diện admin đơn hàng | [p12-1](tasks/p12-1-admin-products-api.md) · [p12-2](tasks/p12-2-upload-images.md) · [p12-3](tasks/p12-3-admin-orders-api.md) · [p12-4](tasks/p12-4-admin-products-ui.md) · [p12-5](tasks/p12-5-admin-orders-ui.md) |
+| 13 | #40 API báo cáo · #41 Dashboard (cần `npm run db:seed-orders` để có dữ liệu) | [p13-1](tasks/p13-1-reports-api.md) · [p13-2](tasks/p13-2-dashboard.md) |
+| 14 | #42 Migration · #43 CI, #44 triển khai: soạn sau | [p14-1](tasks/p14-1-migrations.md) |
 
 Luồng làm một task: nhận task (Assignees) → kéo sang **In progress** → tạo nhánh → làm theo hướng dẫn → Pull Request có `Closes #<số>` → teammate review → merge (thẻ tự sang **Done**).
 
