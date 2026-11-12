@@ -1,0 +1,6 @@
+# 1. Branch name and target (fast, runs first)
+node scripts/git/pre-push.mjs || exit 1
+
+# 2. Code must pass lint and unit tests before it leaves your machine
+npm run lint || exit 1
+npm test || exit 1

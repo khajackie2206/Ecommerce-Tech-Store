@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "husky",
     "setup": "npm install && npm --prefix server ci && npm --prefix web ci",
     "dev": "concurrently -n api,web -c blue,green \"npm --prefix server run start:dev\" \"npm --prefix web run dev\"",
     "db:up": "docker compose up -d --wait",
@@ -23,6 +24,9 @@
     "build": "npm --prefix server run build && npm --prefix web run build"
   },
   "devDependencies": {
-    "concurrently": "^10.0.6"
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "concurrently": "^10.0.6",
+    "husky": "^9.1.7"
   }
 }
