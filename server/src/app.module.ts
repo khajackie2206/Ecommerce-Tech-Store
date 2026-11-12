@@ -6,6 +6,8 @@ import { AppService } from './app.service.js';
 import { BrandsModule } from './brands/brands.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { ProductsModule } from './products/products.module.js';
+import { APP_FILTER } from '@nestjs/core';
+import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
 
 @Module({
   imports: [
@@ -47,6 +49,12 @@ import { ProductsModule } from './products/products.module.js';
     ProductsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: SqlExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
