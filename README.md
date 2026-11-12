@@ -165,10 +165,12 @@ tech-store/
 
 ## 7. Quy ước làm việc nhóm
 
-- **Không code thẳng trên `main`.** Tạo nhánh cho mỗi việc, ví dụ `git switch -c feature/categories`. Push nhánh lên và tạo **Pull Request** để teammate review rồi mới merge.
+Chi tiết đầy đủ trong **[CONTRIBUTING.md](CONTRIBUTING.md)**. Git hook tự kiểm tra tên nhánh, commit message, lint và test.
+
+- **Không code thẳng trên `main`.** Tạo nhánh cho mỗi việc theo dạng `<loại>/<số-issue>-<mô-tả>`, ví dụ `git switch -c feat/17-jwt-login`. Push nhánh lên và tạo **Pull Request** để teammate review rồi mới merge.
+- Commit message theo Conventional Commits, ví dụ `feat(auth): add JWT login (#17)`.
 - Trước khi bắt đầu: `git switch main`, `git pull`, rồi `npm run setup` nếu có thư viện mới.
 - Comment trong code và commit message viết bằng **tiếng Anh**. Chữ hiển thị trên giao diện viết bằng tiếng Việt.
-- Trước khi tạo Pull Request: `npm run lint` và `npm test` phải qua.
 
 ## 8. Lỗi hay gặp
 
