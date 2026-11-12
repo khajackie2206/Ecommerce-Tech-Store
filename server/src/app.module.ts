@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
@@ -6,7 +6,8 @@ import { AppService } from './app.service.js';
 import { BrandsModule } from './brands/brands.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { ProductsModule } from './products/products.module.js';
-import { APP_FILTER } from '@nestjs/core';
+import { UsersModule } from './users/users.module.js';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
 
 @Module({
@@ -49,6 +50,7 @@ import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
     BrandsModule,
     CategoriesModule,
     ProductsModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
@@ -57,6 +59,9 @@ import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
       provide: APP_FILTER,
       useClass: SqlExceptionFilter,
     },
+    // App-wide interceptor: runs class-transformer on every response,
+    // so fields marked @Exclude() (passwordHash) never leave the server
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
   ],
 })
 export class AppModule {}
