@@ -9,44 +9,67 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 import { BrandsService } from './brands.service.js';
 import { CreateBrandDto } from './dto/create-brand.dto.js';
 import { UpdateBrandDto } from './dto/update-brand.dto.js';
 
 // Every route here starts with /api/v1/brands (global prefix + 'brands')
+@ApiTags('Hãng')
 @Controller('brands')
 export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 
-  // GET /api/v1/brands
+  @Public()
+  @ApiOperation({ summary: 'Danh sách hãng, theo tên A-Z' })
   @Get()
   findAll() {
     return this.brandsService.findAll();
   }
 
-  // GET /api/v1/brands/1 - ParseIntPipe turns "1" into 1, or returns 400 for "abc"
+  @Public()
+  @ApiOperation({ summary: 'Chi tiết một hãng' })
+  @ApiNotFoundResponse({ description: 'Không có hãng với id này' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.brandsService.findOne(id);
   }
 
-  // POST /api/v1/brands - responds 201 Created by default
+  @Roles('admin')
+  @ApiOperation({ summary: 'Tạo hãng' })
+  @ApiBadRequestResponse({ description: 'Dữ liệu không hợp lệ' })
+  @ApiConflictResponse({ description: 'Slug đã được dùng' })
   @Post()
-  create(@Body() body: CreateBrandDto) {
-    return this.brandsService.create(body);
+  create(@Body() dto: CreateBrandDto) {
+    return this.brandsService.create(dto);
   }
 
-  // PATCH /api/v1/brands/1 - partial update
+  @Roles('admin')
+  @ApiOperation({ summary: 'Sửa một phần hãng' })
+  @ApiBadRequestResponse({ description: 'Dữ liệu không hợp lệ' })
+  @ApiNotFoundResponse({ description: 'Không có hãng với id này' })
+  @ApiConflictResponse({ description: 'Slug đã được dùng' })
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBrandDto) {
     return this.brandsService.update(id, dto);
   }
 
-  // DELETE /api/v1/brands/1 - 204 No Content: success, empty body
+  // 204 No Content: success, empty body
+  @Roles('admin')
+  @ApiOperation({ summary: 'Xoá hãng' })
+  @ApiNotFoundResponse({ description: 'Không có hãng với id này' })
+  @ApiConflictResponse({ description: 'Hãng còn sản phẩm, không xoá được' })
   @Delete(':id')
   @HttpCode(204)
   remove(@Param('id', ParseIntPipe) id: number) {
-    // Return the Promise so Nest waits for it and turns a thrown 404 into the response
     return this.brandsService.remove(id);
   }
 }

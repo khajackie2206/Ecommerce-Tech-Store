@@ -7,15 +7,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { User } from '../users/user.entity.js';
 import { UsersService } from '../users/users.service.js';
+import type { AuthResponse } from './dto/auth-response.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { JwtPayload } from './jwt-payload.js';
-
-// What register and login send back to the client
-export interface AuthResponse {
-  accessToken: string;
-  user: User; // passwordHash is removed by ClassSerializerInterceptor
-}
 
 @Injectable()
 export class AuthService {
@@ -58,6 +53,16 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  // Fresh data for GET /auth/me. The token may be hours old: the account could have
+  // been locked or deleted since, so read the database instead of trusting the token.
+  async getProfile(userId: string): Promise<User> {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Tài khoản không còn hoạt động');
+    }
+    return user;
   }
 
   private async buildAuthResponse(user: User): Promise<AuthResponse> {
