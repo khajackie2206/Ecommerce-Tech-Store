@@ -15,6 +15,7 @@
     "db:logs": "docker compose logs -f sqlserver",
     "db:schema": "docker compose exec sqlserver bash /database/run-sql.sh schema.sql",
     "db:seed": "docker compose exec sqlserver bash /database/run-sql.sh seed.sql",
+    "db:promote-admin": "docker compose exec sqlserver bash /database/run-sql.sh promote-admin.sql",
     "db:reset": "npm run db:schema && npm run db:seed",
     "app:up": "docker compose --profile app up -d --build --wait",
     "app:down": "docker compose --profile app down",
