@@ -11,6 +11,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AuthGuard } from './auth/guards/auth.guard.js';
+import { RolesGuard } from './auth/guards/roles.guard.js';
 
 @Module({
   imports: [
@@ -67,6 +68,8 @@ import { AuthGuard } from './auth/guards/auth.guard.js';
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     // App-wide guard: every route needs a valid token unless marked @Public()
     { provide: APP_GUARD, useClass: AuthGuard },
+    // Runs after AuthGuard (guards run in the order they are listed): checks @Roles()
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

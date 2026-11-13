@@ -47,6 +47,14 @@ describe('AppController (e2e)', () => {
       .expect(401);
   });
 
+  it('POST /api/v1/categories with a customer token returns 403', async () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', await bearer(app, 'customer'))
+      .send({ name: 'Test', slug: 'test' })
+      .expect(403);
+  });
+
   it('POST /api/v1/categories rejects unknown fields with 400', async () => {
     return request(app.getHttpServer())
       .post('/api/v1/categories')
