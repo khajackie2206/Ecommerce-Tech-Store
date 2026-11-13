@@ -77,7 +77,10 @@ export class Product {
   updatedAt: Date;
 
   // ONE product has MANY variants / images (the inverse side: creates no column)
-  @OneToMany(() => ProductVariant, (variant) => variant.product)
+  // cascade insert: saving a new Product with variants inserts the variants too (admin)
+  @OneToMany(() => ProductVariant, (variant) => variant.product, {
+    cascade: ['insert'],
+  })
   variants: Relation<ProductVariant[]>;
 
   @OneToMany(() => ProductImage, (image) => image.product)
