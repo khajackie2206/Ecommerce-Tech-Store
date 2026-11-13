@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module.js';
 import { UsersModule } from './users/users.module.js';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
     CategoriesModule,
     ProductsModule,
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
