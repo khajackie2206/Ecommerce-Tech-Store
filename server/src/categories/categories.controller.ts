@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator.js';
 import { CategoriesService } from './categories.service.js';
 // Regular (not "import type") imports: ValidationPipe needs the DTO classes at runtime
 import { CreateCategoryDto } from './dto/create-category.dto.js';
@@ -20,12 +21,14 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   // GET /api/v1/categories
+  @Public()
   @Get()
   findAll() {
     return this.categoriesService.findAll();
   }
 
   // GET /api/v1/categories/1 - ParseIntPipe turns "1" into 1, or returns 400 for "abc"
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);

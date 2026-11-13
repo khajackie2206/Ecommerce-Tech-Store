@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator.js';
 import { BrandsService } from './brands.service.js';
 import { CreateBrandDto } from './dto/create-brand.dto.js';
 import { UpdateBrandDto } from './dto/update-brand.dto.js';
@@ -19,12 +20,14 @@ export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 
   // GET /api/v1/brands
+  @Public()
   @Get()
   findAll() {
     return this.brandsService.findAll();
   }
 
   // GET /api/v1/brands/1 - ParseIntPipe turns "1" into 1, or returns 400 for "abc"
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.brandsService.findOne(id);
