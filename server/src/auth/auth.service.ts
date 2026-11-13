@@ -60,6 +60,16 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  // Fresh data for GET /auth/me. The token may be hours old: the account could have
+  // been locked or deleted since, so read the database instead of trusting the token.
+  async getProfile(userId: string): Promise<User> {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Tài khoản không còn hoạt động');
+    }
+    return user;
+  }
+
   private async buildAuthResponse(user: User): Promise<AuthResponse> {
     const payload: JwtPayload = {
       sub: user.id,
