@@ -56,13 +56,30 @@ describe('Auth (e2e)', () => {
     expect(res.body.message).toContain('Mật khẩu tối thiểu 8 ký tự');
   });
 
-  it('POST /auth/login returns 200 with a token', async () => {
-    const res = await request(app.getHttpServer())
+  it('POST /auth/login returns a token that opens GET /auth/me', async () => {
+    const login = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({ email, password })
       .expect(200);
 
-    expect(res.body.accessToken).toEqual(expect.any(String));
+    const me = await request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(200);
+
+    expect(me.body.email).toBe(email);
+    expect(me.body).not.toHaveProperty('passwordHash');
+  });
+
+  it('GET /auth/me without a token returns 401', () => {
+    return request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
+  });
+
+  it('GET /auth/me with a broken token returns 401', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .set('Authorization', 'Bearer abc.def.ghi')
+      .expect(401);
   });
 
   it('POST /auth/login with a wrong password returns 401', () => {

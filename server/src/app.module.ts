@@ -7,9 +7,12 @@ import { BrandsModule } from './brands/brands.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { UsersModule } from './users/users.module.js';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
 import { AuthModule } from './auth/auth.module.js';
+import { AuthGuard } from './auth/guards/auth.guard.js';
+import { RolesGuard } from './auth/guards/roles.guard.js';
+import { OrdersModule } from './orders/orders.module.js';
 
 @Module({
   imports: [
@@ -53,6 +56,7 @@ import { AuthModule } from './auth/auth.module.js';
     ProductsModule,
     UsersModule,
     AuthModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [
@@ -64,6 +68,10 @@ import { AuthModule } from './auth/auth.module.js';
     // App-wide interceptor: runs class-transformer on every response,
     // so fields marked @Exclude() (passwordHash) never leave the server
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+    // App-wide guard: every route needs a valid token unless marked @Public()
+    { provide: APP_GUARD, useClass: AuthGuard },
+    // Runs after AuthGuard (guards run in the order they are listed): checks @Roles()
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}
