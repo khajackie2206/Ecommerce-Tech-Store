@@ -8,6 +8,7 @@ import { configureApp } from './../src/app.setup.js';
 import { Order } from './../src/orders/entities/order.entity.js';
 import { ProductVariant } from './../src/products/entities/product-variant.entity.js';
 import { User } from './../src/users/user.entity.js';
+import { bearer } from './auth-helper.js';
 
 // Places real orders in SQL Server, then removes them and puts the stock back,
 // so the test can run again and again without draining the sample data.
@@ -53,6 +54,13 @@ describe('Orders (e2e)', () => {
       .findOneByOrFail({ sku: 'SS-TA25W-WHT' }); // 25W charger, 120 in stock
   });
 
+  // Each test starts from the same stock, whatever the previous test did
+  beforeEach(async () => {
+    await dataSource
+      .getRepository(ProductVariant)
+      .update({ id: variant.id }, { stock: 50 });
+  });
+
   afterAll(async () => {
     // Undo everything this test did: delete its orders and user, restore the stock
     const user = await dataSource.getRepository(User).findOneBy({ email });
@@ -95,6 +103,48 @@ describe('Orders (e2e)', () => {
 
     expect(res.body.message).toContain('chỉ còn 3 sản phẩm');
     expect(await stockOf(variant.id)).toBe(3);
+  });
+
+  it('GET /orders lists my orders, newest first', async () => {
+    const placed = await placeOrder(variant.id, 1).expect(201);
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/orders?limit=5')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.items[0].code).toBe(placed.body.code);
+    expect(res.body.items[0].items).toHaveLength(1);
+    expect(res.body).toMatchObject({ page: 1, limit: 5 });
+  });
+
+  it("GET /orders/:code of someone else's order returns 404", async () => {
+    const placed = await placeOrder(variant.id, 1).expect(201);
+    // Another logged-in customer (token signed by the app, see auth-helper.ts)
+    const stranger = await bearer(app, 'customer');
+
+    await request(app.getHttpServer())
+      .get(`/api/v1/orders/${placed.body.code}`)
+      .set('Authorization', stranger)
+      .expect(404);
+  });
+
+  it('PATCH /orders/:code/cancel gives the stock back, and only once', async () => {
+    const before = await stockOf(variant.id);
+    const placed = await placeOrder(variant.id, 2).expect(201);
+    expect(await stockOf(variant.id)).toBe(before - 2);
+
+    const cancel = () =>
+      request(app.getHttpServer())
+        .patch(`/api/v1/orders/${placed.body.code}/cancel`)
+        .set('Authorization', `Bearer ${token}`);
+
+    const res = await cancel().expect(200);
+    expect(res.body.status).toBe('cancelled');
+    expect(await stockOf(variant.id)).toBe(before);
+
+    await cancel().expect(409); // already cancelled: no second refund of stock
+    expect(await stockOf(variant.id)).toBe(before);
   });
 
   it('two customers buying the last unit at the same time: only one wins', async () => {
