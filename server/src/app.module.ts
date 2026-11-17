@@ -12,6 +12,7 @@ import { SqlExceptionFilter } from './common/filters/sql-exception.filter.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AuthGuard } from './auth/guards/auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
+import { OrdersModule } from './orders/orders.module.js';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { RolesGuard } from './auth/guards/roles.guard.js';
     ProductsModule,
     UsersModule,
     AuthModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [
