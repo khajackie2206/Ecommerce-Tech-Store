@@ -1,4 +1,5 @@
 import { Exclude } from 'class-transformer';
+import { ApiHideProperty } from '@nestjs/swagger';
 import {
   Column,
   CreateDateColumn,
@@ -22,7 +23,9 @@ export class User {
   @Column({ type: 'nvarchar', length: 255, unique: true })
   email: string;
 
-  // Never sent to the client: ClassSerializerInterceptor drops @Exclude() fields
+  // Never sent to the client: ClassSerializerInterceptor drops @Exclude() fields.
+  // @ApiHideProperty: also keep it out of the Swagger docs
+  @ApiHideProperty()
   @Exclude()
   @Column({ type: 'nvarchar', length: 255 })
   passwordHash: string;

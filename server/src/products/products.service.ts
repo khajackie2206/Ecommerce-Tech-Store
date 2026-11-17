@@ -3,27 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity.js';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ListProductsQueryDto } from './dto/list-products-query.dto.js';
-
-export interface ProductListItem {
-  id: number;
-  name: string;
-  slug: string;
-  shortDescription: string | null;
-  thumbnailUrl: string | null;
-  isFeatured: boolean;
-  category: { name: string; slug: string };
-  brand: { name: string; slug: string };
-  fromPrice: number;
-  listPrice: number;
-  inStock: boolean;
-}
-
-export interface ProductListResult {
-  items: ProductListItem[];
-  total: number;
-  page: number;
-  limit: number;
-}
+import type { ProductListResult } from './dto/product-list.dto.js';
 
 interface ProductListRow {
   id: number;

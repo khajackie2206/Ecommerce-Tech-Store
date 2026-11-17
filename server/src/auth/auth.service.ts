@@ -7,15 +7,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { User } from '../users/user.entity.js';
 import { UsersService } from '../users/users.service.js';
+import type { AuthResponse } from './dto/auth-response.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { JwtPayload } from './jwt-payload.js';
-
-// What register and login send back to the client
-export interface AuthResponse {
-  accessToken: string;
-  user: User; // passwordHash is removed by ClassSerializerInterceptor
-}
 
 @Injectable()
 export class AuthService {
