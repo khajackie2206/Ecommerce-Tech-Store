@@ -2,8 +2,13 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import type {
+  Paginated,
+  PaginationQueryDto,
+} from '../common/dto/pagination-query.dto.js';
 import { ProductVariant } from '../products/entities/product-variant.entity.js';
 import type { CreateOrderDto } from './dto/create-order.dto.js';
 import { Order } from './entities/order.entity.js';
@@ -84,6 +89,74 @@ export class OrdersService {
       });
       return manager.save(order);
     });
+  }
+
+  // Order history of one customer, newest first, with the lines of each order
+  async findMine(
+    userId: string,
+    { page, limit }: PaginationQueryDto,
+  ): Promise<Paginated<Order>> {
+    // findAndCount = the page of rows + COUNT(*) of all matching rows, in one call
+    const [items, total] = await this.dataSource
+      .getRepository(Order)
+      .findAndCount({
+        where: { userId },
+        relations: { items: true },
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    return { items, total, page, limit };
+  }
+
+  // One order of this customer. Someone else's order gives the same 404 as a
+  // missing one: never confirm that an order code exists to a stranger.
+  async findMineByCode(userId: string, code: string): Promise<Order> {
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { code, userId },
+      relations: { items: true },
+    });
+    if (!order) throw new NotFoundException(`Không tìm thấy đơn hàng ${code}`);
+    return order;
+  }
+
+  // The customer cancels an order that the shop has not confirmed yet.
+  // Status change + stock given back: one transaction again.
+  cancelMine(userId: string, code: string): Promise<Order> {
+    return this.dataSource.transaction(async (manager) => {
+      // Lock the order row: two clicks on Huỷ (or the shop confirming at the same
+      // moment) are handled one after the other
+      const order = await manager
+        .getRepository(Order)
+        .createQueryBuilder('o')
+        .setLock('pessimistic_write')
+        .leftJoinAndSelect('o.items', 'i')
+        .where('o.code = :code AND o.userId = :userId', { code, userId })
+        .getOne();
+      if (!order)
+        throw new NotFoundException(`Không tìm thấy đơn hàng ${code}`);
+      if (order.status !== 'pending') {
+        throw new ConflictException('Chỉ huỷ được đơn hàng đang chờ xác nhận');
+      }
+
+      await this.restoreStock(manager, order);
+      // UPDATE Orders SET status = 'cancelled', updatedAt = ... WHERE id = @0
+      await manager.update(Order, { id: order.id }, { status: 'cancelled' });
+      order.status = 'cancelled';
+      return order;
+    });
+  }
+
+  // Put back the stock an order took. Must run inside the caller's transaction.
+  private async restoreStock(manager: EntityManager, order: Order) {
+    for (const item of order.items) {
+      await manager.increment(
+        ProductVariant,
+        { id: item.variantId },
+        'stock',
+        item.quantity,
+      );
+    }
   }
 
   // SELECT the variants WITH (UPDLOCK, ROWLOCK): until this transaction ends, any other
