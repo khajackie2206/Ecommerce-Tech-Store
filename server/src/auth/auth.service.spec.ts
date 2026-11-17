@@ -10,7 +10,11 @@ describe('AuthService', () => {
   let service: AuthService;
   const jwtService = new JwtService({ secret: 'test-secret' }); // a real one, test key
   // Fake UsersService: no database in unit tests
-  const usersService = { findByEmail: vi.fn(), create: vi.fn() };
+  const usersService = {
+    findByEmail: vi.fn(),
+    create: vi.fn(),
+    findById: vi.fn(),
+  };
 
   // Builds a User like the one TypeORM would return
   const makeUser = (data: Partial<User>) =>
@@ -113,6 +117,34 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'an@mail.com', password: 'matkhau123' }),
       ).rejects.toThrow('Tài khoản đã bị khoá');
+    });
+  });
+
+  describe('getProfile', () => {
+    it('returns fresh data from the database', async () => {
+      usersService.findById.mockResolvedValue(
+        makeUser({ fullName: 'Tên mới' }),
+      );
+
+      const user = await service.getProfile(
+        'A1B2C3D4-0000-0000-0000-000000000001',
+      );
+
+      expect(user.fullName).toBe('Tên mới');
+      expect(usersService.findById).toHaveBeenCalledWith(
+        'A1B2C3D4-0000-0000-0000-000000000001',
+      );
+    });
+
+    // Token still valid, but the account changed after login
+    it.each([
+      ['deleted', null],
+      ['locked', makeUser({ isActive: false })],
+    ])('rejects a %s account with 401', async (_why, found) => {
+      usersService.findById.mockResolvedValue(found);
+      await expect(service.getProfile('any-id')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });
