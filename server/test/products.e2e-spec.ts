@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { configureApp } from './../src/app.setup.js';
+import { bearer } from './auth-helper.js';
 import { Product } from './../src/products/entities/product.entity.js';
 
 // Checks that the product entities match the real tables (SQL Server must be running)
@@ -60,9 +61,10 @@ describe('Product entities (e2e)', () => {
       .expect(404);
   });
 
-  it('DELETE a category that still has products returns 409, not 500', () => {
+  it('DELETE a category that still has products returns 409, not 500', async () => {
     return request(app.getHttpServer())
       .delete('/api/v1/categories/1')
+      .set('Authorization', await bearer(app, 'admin'))
       .expect(409)
       .expect((res) => {
         expect(res.body.message).toBe(

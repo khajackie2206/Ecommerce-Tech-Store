@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 import { configureApp } from './../src/app.setup.js';
+import { bearer } from './auth-helper.js';
 
 // End-to-end test: boots the real app, so SQL Server must be running (npm run db:up)
 describe('AppController (e2e)', () => {
@@ -39,9 +40,25 @@ describe('AppController (e2e)', () => {
       .expect({ status: 'ok', database: 'up' });
   });
 
-  it('POST /api/v1/categories rejects unknown fields with 400', () => {
+  it('POST /api/v1/categories without a token returns 401', () => {
     return request(app.getHttpServer())
       .post('/api/v1/categories')
+      .send({ name: 'Test', slug: 'test' })
+      .expect(401);
+  });
+
+  it('POST /api/v1/categories with a customer token returns 403', async () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', await bearer(app, 'customer'))
+      .send({ name: 'Test', slug: 'test' })
+      .expect(403);
+  });
+
+  it('POST /api/v1/categories rejects unknown fields with 400', async () => {
+    return request(app.getHttpServer())
+      .post('/api/v1/categories')
+      .set('Authorization', await bearer(app, 'admin'))
       .send({ name: 'Test', slug: 'test', role: 'admin' })
       .expect(400);
   });
