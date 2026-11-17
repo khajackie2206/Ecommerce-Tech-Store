@@ -8,5 +8,20 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // npm run test:cov: which lines of src/ did the unit tests run?
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      // Not business logic: bootstrapping, module wiring, plain data shapes
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/main.ts',
+        'src/swagger.ts',
+        'src/**/*.module.ts',
+        'src/**/*.entity.ts',
+        'src/**/*.dto.ts',
+      ],
+      reporter: ['text', 'html'], // table in the terminal + coverage/index.html
+    },
   },
 });
